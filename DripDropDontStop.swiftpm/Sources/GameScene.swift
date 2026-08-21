@@ -49,6 +49,9 @@ struct Level {
     /// Par time in seconds: the score pot holds at 1000 until par elapses,
     /// then decays. Finish under par for the full pot.
     var par: Double = 20
+    /// Whether the STEAM button is offered. Off for levels 1–13 so the
+    /// original tuning survives — same gating precedent as ink.
+    var steamAllowed = false
 }
 
 enum Levels {
@@ -235,6 +238,76 @@ enum Levels {
               ],
               inkBudget: 260,
               par: 38),
+        // MARK: v1.1 — the steam levels. STEAM rises as vapor, drifts with
+        // reduced tilt authority, ignores floor drains and grates, dies to
+        // icicles, can't enter the basin, and condenses back to water after
+        // a few seconds. Only these levels offer the button (steamAllowed).
+        Level(name: "Vapor",
+              hint: "Tap STEAM to rise as vapor — it drifts with TILT and condenses back to water in a few seconds. The basin only takes liquid.",
+              spawn: CGPoint(x: 0.15, y: 0.10),
+              walls: [
+                  CGRect(x: 0.47, y: 0.00, width: 0.06, height: 0.55),   // the divider
+              ],
+              zones: [
+                  Zone(rect: CGRect(x: 0.80, y: 0.015, width: 0.16, height: 0.05), kind: .goal),
+              ],
+              par: 15,
+              steamAllowed: true),
+        Level(name: "Stepping Stones",
+              hint: "Vapor hops: STEAM up, drift RIGHT, condense on each stone. The floor below swallows water and ice alike.",
+              spawn: CGPoint(x: 0.12, y: 0.18),
+              walls: [
+                  CGRect(x: 0.03, y: 0.12, width: 0.20, height: 0.03),
+                  CGRect(x: 0.40, y: 0.18, width: 0.20, height: 0.03),
+                  CGRect(x: 0.78, y: 0.12, width: 0.20, height: 0.03),
+              ],
+              zones: [
+                  Zone(rect: CGRect(x: 0.00, y: 0.00, width: 1.00, height: 0.035), kind: .drain),
+                  Zone(rect: CGRect(x: 0.82, y: 0.155, width: 0.14, height: 0.05), kind: .goal),
+              ],
+              par: 25,
+              steamAllowed: true),
+        Level(name: "Cold Front",
+              hint: "Icicles freeze vapor dead. STEAM through the gaps, rest on the perch, and come at the ledge from the right.",
+              spawn: CGPoint(x: 0.10, y: 0.08),
+              walls: [
+                  CGRect(x: 0.55, y: 0.50, width: 0.25, height: 0.03),   // the perch
+                  CGRect(x: 0.00, y: 0.86, width: 0.30, height: 0.03),   // goal ledge
+              ],
+              zones: [
+                  Zone(rect: CGRect(x: 0.25, y: 0.35, width: 0.75, height: 0.04), kind: .drain),  // icicles, gap left
+                  Zone(rect: CGRect(x: 0.00, y: 0.65, width: 0.75, height: 0.04), kind: .drain),  // icicles, gap right
+                  Zone(rect: CGRect(x: 0.04, y: 0.895, width: 0.14, height: 0.05), kind: .goal),
+              ],
+              par: 25,
+              steamAllowed: true),
+        Level(name: "Boiler Room",
+              hint: "FREEZE to land on the grates and skate right — then STEAM straight from ice (sublime!) and condense on the high ledge.",
+              spawn: CGPoint(x: 0.08, y: 0.85),
+              walls: [
+                  CGRect(x: 0.60, y: 0.40, width: 0.38, height: 0.03),   // the ledge
+              ],
+              zones: [
+                  Zone(rect: CGRect(x: 0.00, y: 0.00, width: 1.00, height: 0.035), kind: .grate),
+                  Zone(rect: CGRect(x: 0.78, y: 0.43, width: 0.14, height: 0.05), kind: .goal),
+              ],
+              par: 30,
+              steamAllowed: true),
+        Level(name: "Cloudburst",
+              hint: "Everything at once: DRAW a catch-slide over the drain, STEAM between perches, and condense onto the goal shelf. Mind the icicles.",
+              spawn: CGPoint(x: 0.10, y: 0.62),
+              walls: [
+                  CGRect(x: 0.02, y: 0.55, width: 0.20, height: 0.03),   // start shelf
+                  CGRect(x: 0.75, y: 0.70, width: 0.23, height: 0.03),   // goal shelf
+              ],
+              zones: [
+                  Zone(rect: CGRect(x: 0.00, y: 0.00, width: 1.00, height: 0.035), kind: .drain),
+                  Zone(rect: CGRect(x: 0.30, y: 0.82, width: 0.45, height: 0.04), kind: .drain),  // icicles: no ceiling route
+                  Zone(rect: CGRect(x: 0.80, y: 0.73, width: 0.14, height: 0.05), kind: .goal),
+              ],
+              inkBudget: 300,
+              par: 40,
+              steamAllowed: true),
     ]
 }
 
@@ -258,6 +331,10 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     private let maxSpeed: CGFloat = 1400        // ice top speed / anti-tunneling cap
     private let waterMaxSpeed: CGFloat = 380    // water splatters beyond this — ice doesn't
     private let airSteer: CGFloat = 0.15        // tilt authority while airborne (ballistic air)
+    private let steamMaxSpeed: CGFloat = 250    // vapor floats, it doesn't fly
+    private let steamBuoyancy: CGFloat = 0.30   // upward pull as a fraction of gravityStrength
+    private let steamSteer: CGFloat = 0.35      // tilt authority as vapor (drifty)
+    private let steamDuration: TimeInterval = 3.5   // then it condenses back to water
 
     private var droplet: SKShapeNode!
     private var dropletVisual: DropletVisual?
@@ -269,12 +346,16 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     private(set) var levelIndex = 0
     private var holdingLift = false
     private var transitioning = false
-    private var iceApplied = false
+    private var appliedPhase: Phase = .water
+    private var steamElapsed: TimeInterval = 0
+    private var steamFrac: CGFloat = 1          // remaining vapor time, 1→0
     /// Zones in scene coordinates, checked geometrically every frame.
     /// Sensor-style physics contacts (collision-less bodies) proved
     /// unreliable for a ball rolling along the scene edge, so the checks
     /// that decide life and death are plain rect math instead.
-    private var zoneRects: [(kind: ZoneKind, rect: CGRect)] = []
+    /// `elevated` marks drains that render as icicles — the one hazard that
+    /// still kills vapor (cold condenses it dead).
+    private var zoneRects: [(kind: ZoneKind, rect: CGRect, elevated: Bool)] = []
     private var levelStartTime: TimeInterval = 0
 
     private enum RunState { case countdown, playing }
@@ -311,11 +392,11 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     }()
 
     private func loadSounds() {
-        for name in ["plink", "ice_tap", "freeze", "melt", "goal", "die", "tick", "go", "carve"]
+        for name in ["plink", "ice_tap", "freeze", "melt", "goal", "die", "tick", "go", "carve", "steam"]
         where Bundle.main.url(forResource: name, withExtension: "wav") != nil {
             sounds[name] = SKAction.playSoundFileNamed("\(name).wav", waitForCompletion: false)
         }
-        NSLog("DripDrop: loaded \(sounds.count)/9 sounds")
+        NSLog("DripDrop: loaded \(sounds.count)/10 sounds")
     }
 
     private func sfx(_ name: String) {
@@ -389,7 +470,10 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         model?.hint = level.hint
         inkBudget = level.inkBudget
         model?.carveAllowed = level.inkBudget > 0
-        model?.isIce = false            // every level starts as water
+        model?.steamAllowed = level.steamAllowed
+        model?.phase = .water           // every level starts as water
+        steamElapsed = 0
+        steamFrac = 1
         levelStartTime = CACurrentMediaTime()
         model?.availableScore = 1000
 
@@ -420,7 +504,10 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         for w in level.walls { addWall(rect(w)) }
         for r in level.ramps { addRamp(r) }
         for m in level.movers { addMover(m) }
-        zoneRects = level.zones.map { (kind: $0.kind, rect: rect($0.rect)) }
+        zoneRects = level.zones.map {
+            (kind: $0.kind, rect: rect($0.rect),
+             elevated: $0.kind == .drain && $0.rect.minY > 0.06)
+        }
         for z in level.zones { addZone(z) }
         spawnDroplet(at: point(level.spawn))
         applyPhase()
@@ -581,23 +668,30 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         spawnMarker = marker
     }
 
-    /// Water vs ice: same ball, different physics material. The look is the
-    /// shader's job — DropletVisual morphs between phases on its own.
+    /// Same ball, per-phase physics material. The look is the shader's job —
+    /// DropletVisual morphs between phases on its own.
     private func applyPhase() {
         guard let model, let body = droplet?.physicsBody else { return }
-        iceApplied = model.isIce
-        if iceApplied {
-            trail?.particleColor = .white
-            body.friction = 0.02
-            body.linearDamping = 0.05
-            body.restitution = 0.08
-        } else {
+        appliedPhase = model.phase
+        switch appliedPhase {
+        case .water:
             // Damping 0.8 is water's identity: it clings in flight, which is
             // exactly why it can't clear the level-4 pit and ice can.
             trail?.particleColor = UIColor(red: 0.45, green: 0.75, blue: 1.0, alpha: 1)
             body.friction = 0.25
             body.linearDamping = 0.8
             body.restitution = 0.3
+        case .ice:
+            trail?.particleColor = .white
+            body.friction = 0.02
+            body.linearDamping = 0.05
+            body.restitution = 0.08
+        case .steam:
+            // Vapor: heavy drag so buoyancy sets the pace, no bounce.
+            trail?.particleColor = UIColor(white: 0.95, alpha: 0.6)
+            body.friction = 0.05
+            body.linearDamping = 1.4
+            body.restitution = 0.05
         }
     }
 
@@ -615,7 +709,12 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         // a surface is what carries a jump — without this rule, tilt acts as
         // a mid-air thruster and any gap can be flown by either phase.
         let grounded = !(body.allContactedBodies().isEmpty)
-        if grounded {
+        if model.phase == .steam {
+            // Vapor makes its own "up": buoyant rise, drifty tilt authority,
+            // grounded or not. (Blow does nothing to it — see the lift gate.)
+            physicsWorld.gravity = CGVector(dx: model.tilt.dx * gravityStrength * steamSteer,
+                                            dy: steamBuoyancy * gravityStrength)
+        } else if grounded {
             let dy = min(model.tilt.dy, -0.25)
             physicsWorld.gravity = CGVector(dx: model.tilt.dx * gravityStrength,
                                             dy: dy * gravityStrength)
@@ -624,17 +723,22 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
                                             dy: -0.55 * gravityStrength)
         }
 
-        if model.isIce != iceApplied {
+        if model.phase != appliedPhase {
             applyPhase()
             freezeHaptic.impactOccurred()
-            sfx(iceApplied ? "freeze" : "melt")
+            switch appliedPhase {
+            case .ice:   sfx("freeze")
+            case .steam: sfx("steam")
+            case .water: sfx("melt")    // melting and condensing share a bloop
+            }
+            if appliedPhase == .steam { steamElapsed = 0; steamFrac = 1 }
         }
 
         // During the countdown the world holds its breath: no gravity
         // steering, no lift, no zone checks, no score drain.
         guard runState == .playing else {
             currentLift = 0
-            rolling.update(speed: 0, grounded: false, isIce: iceApplied)
+            rolling.update(speed: 0, grounded: false, isIce: appliedPhase == .ice)
             return
         }
 
@@ -647,8 +751,18 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         // 150 points-per-meter internally) but applyForce works in point
         // units — forces must be multiplied by 150 or they're 150x too weak
         // to fight gravity. This is why earlier versions felt dead.
+        // The vapor clock: steam condenses back to water on its own. Ticks
+        // only while playing, so pre-vaporizing in the countdown is free.
+        if model.phase == .steam {
+            steamElapsed += TimeInterval(frameDT)
+            steamFrac = max(0, 1 - CGFloat(steamElapsed / steamDuration))
+            if steamElapsed >= steamDuration { model.phase = .water }
+        }
+
         let pointsPerMeter: CGFloat = 150
-        let lift = max(holdingLift ? 0.9 : 0, CGFloat(model.blowLevel))
+        // "Up" belongs to breath — except as vapor, which owns its own rise.
+        let lift = model.phase == .steam ? 0
+                 : max(holdingLift ? 0.9 : 0, CGFloat(model.blowLevel))
         currentLift = lift > 0.10 ? lift : 0
         if lift > 0.10 {
             // Proportional all the way down — no free weightlessness at the
@@ -661,11 +775,16 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
             }
         }
 
-        // Per-phase speed cap: water can't hold together at speed; ice can.
-        // This is what makes momentum jumps an ice-only ability.
+        // Per-phase speed cap: water can't hold together at speed; ice can;
+        // vapor floats. This is what makes momentum jumps an ice-only ability.
         let v = body.velocity
         let speed = hypot(v.dx, v.dy)
-        let cap = iceApplied ? maxSpeed : waterMaxSpeed
+        let cap: CGFloat
+        switch model.phase {
+        case .ice:   cap = maxSpeed
+        case .steam: cap = steamMaxSpeed
+        case .water: cap = waterMaxSpeed
+        }
         if speed > cap {
             let k = cap / speed
             body.velocity = CGVector(dx: v.dx * k, dy: v.dy * k)
@@ -674,11 +793,13 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         // Squash, stretch, wobble and drip all live in the metaball shader
         // now — see DropletVisual.sync, driven from didFinishUpdate().
 
-        // Trail intensity follows speed.
-        trail?.particleBirthRate = speed > 250 ? min(40, speed / 15) : 0
+        // Trail intensity follows speed — except vapor, which always wisps.
+        trail?.particleBirthRate = model.phase == .steam ? 14
+            : (speed > 250 ? min(40, speed / 15) : 0)
 
         // Rolling texture in the palm: contact, speed, and phase.
-        rolling.update(speed: speed, grounded: grounded, isIce: iceApplied)
+        // (Vapor rarely touches anything; the airborne gate silences it.)
+        rolling.update(speed: speed, grounded: grounded, isIce: appliedPhase == .ice)
 
         channels.removeAll { $0.parent == nil }   // expired channels
 
@@ -696,11 +817,18 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         for z in zoneRects {
             switch z.kind {
             case .goal:
-                if circleIntersects(z.rect, center: c, radius: 14) { advance() }
+                // The basin only takes liquid (or ice) — vapor drifts past.
+                if model.phase != .steam,
+                   circleIntersects(z.rect, center: c, radius: 14) { advance() }
             case .drain:
-                if circleIntersects(z.rect, center: c, radius: 10) { die() }
+                // Floor drains can't swallow vapor; icicles (elevated)
+                // condense it dead like everything else.
+                if !(model.phase == .steam && !z.elevated),
+                   circleIntersects(z.rect, center: c, radius: 10) { die() }
             case .grate:
-                if !model.isIce, circleIntersects(z.rect, center: c, radius: 10) { die() }
+                // Grates swallow only liquid water.
+                if model.phase == .water,
+                   circleIntersects(z.rect, center: c, radius: 10) { die() }
             }
         }
 
@@ -718,7 +846,8 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         visual.sync(center: droplet.position,
                     velocity: body.velocity,
                     grounded: !body.allContactedBodies().isEmpty,
-                    isIce: model.isIce,
+                    phase: model.phase,
+                    steamRemaining: steamFrac,
                     lift: currentLift,
                     now: lastUpdateTime,
                     dt: frameDT)
@@ -750,9 +879,9 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         let now = CACurrentMediaTime()
         if now - lastPlink > 0.09 {
             lastPlink = now
-            sfx(iceApplied ? "ice_tap" : "plink")
+            sfx(appliedPhase == .ice ? "ice_tap" : "plink")
             // Water sheds a few droplets on a hard hit; ice stays whole.
-            if !iceApplied, speed > 500 {
+            if appliedPhase == .water, speed > 500 {
                 burst(at: droplet.position,
                       color: UIColor(red: 0.4, green: 0.72, blue: 1, alpha: 1),
                       up: false, count: 7)
@@ -799,14 +928,20 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         guard !transitioning else { return }
         UINotificationFeedbackGenerator().notificationOccurred(.error)
         sfx("die")
-        let splash = iceApplied
-            ? UIColor.white
-            : UIColor(red: 0.35, green: 0.68, blue: 1, alpha: 1)
+        let splash: UIColor
+        switch appliedPhase {
+        case .ice:   splash = .white
+        case .steam: splash = UIColor(white: 0.92, alpha: 0.9)
+        case .water: splash = UIColor(red: 0.35, green: 0.68, blue: 1, alpha: 1)
+        }
         burst(at: droplet.position, color: splash, up: false, count: 30)
         shake(0.7)
         droplet.physicsBody?.velocity = .zero
         droplet.physicsBody?.angularVelocity = 0
         droplet.position = point(Levels.all[levelIndex].spawn)
+        // Ice survives a death (v1.0 behavior — Switchback relies on it),
+        // but vapor condenses: respawning as rising steam would be chaos.
+        if model?.phase == .steam { model?.phase = .water }
         dropletVisual?.reset()   // no trail streak across the teleport
     }
 

@@ -50,13 +50,34 @@ struct GameView: View {
                     } label: {
                         Label(model.isIce ? "Melt" : "Freeze",
                               systemImage: model.isIce ? "drop.fill" : "snowflake")
-                            .font(.callout.weight(.semibold))
+                            .font(.footnote.weight(.semibold))
+                            .lineLimit(1)
+                            .fixedSize()
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 14)
+                            .padding(.horizontal, 12)
                             .padding(.vertical, 9)
                             .background(
                                 model.isIce ? Color.blue.opacity(0.4) : Color.cyan.opacity(0.25),
                                 in: Capsule())
+                    }
+
+                    if model.steamAllowed {
+                        Button {
+                            model.toggleSteam()
+                        } label: {
+                            Label(model.phase == .steam ? "Condense" : "Steam",
+                                  systemImage: model.phase == .steam ? "drop.fill" : "cloud.fill")
+                                .font(.footnote.weight(.semibold))
+                                .lineLimit(1)
+                                .fixedSize()
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 9)
+                                .background(
+                                    model.phase == .steam ? Color.gray.opacity(0.5)
+                                                          : Color.white.opacity(0.18),
+                                    in: Capsule())
+                        }
                     }
 
                     Image(systemName: model.carveAllowed ? "pencil.tip" : "pencil.slash")
@@ -77,7 +98,7 @@ struct GameView: View {
                         }
                         .frame(height: 6)
                     }
-                    .frame(maxWidth: 130)
+                    .frame(maxWidth: 110)
 
                     Spacer()
                 }

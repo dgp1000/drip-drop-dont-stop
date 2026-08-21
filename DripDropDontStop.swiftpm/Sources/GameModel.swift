@@ -1,11 +1,22 @@
 import SwiftUI
 import UIKit
 
+/// The droplet's three phases. Water is the default; ice is fast, slippery
+/// and grate-proof; steam rises on its own, ignores floor drains and grates,
+/// but condenses back to water after a few seconds and can't enter the goal.
+enum Phase {
+    case water, ice, steam
+}
+
 final class GameModel: ObservableObject {
     @Published var levelNumber = 1
     @Published var levelName = ""
     @Published var hint = ""
-    @Published var isIce = false
+    @Published var phase: Phase = .water
+    @Published var steamAllowed = false
+
+    /// Convenience for the freeze button and darkness proxy.
+    var isIce: Bool { phase == .ice }
     @Published var blowLevel: Float = 0
     @Published var finished = false
     @Published var carveAllowed = false
@@ -45,13 +56,14 @@ final class GameModel: ObservableObject {
         if let i = args.firstIndex(of: "-autostart") {
             let n = (args.count > i + 1 ? Int(args[i + 1]) : nil) ?? 1
             let idx = min(max(n - 1, 0), Levels.all.count - 1)
-            let freeze = args.contains("-ice")
+            let forced: Phase? = args.contains("-ice") ? .ice
+                               : args.contains("-steam") ? .steam : nil
             DispatchQueue.main.async { [weak self] in
                 self?.startGame(at: idx)
-                if freeze {
+                if let forced {
                     // After didMove's level reload (which resets to water).
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                        self?.isIce = true
+                        self?.phase = forced
                     }
                 }
             }
@@ -107,11 +119,11 @@ final class GameModel: ObservableObject {
         brightnessTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             guard let self else { return }
             let b = UIScreen.main.brightness
-            if b < 0.08, !self.isIce {
-                self.isIce = true
+            if b < 0.08, self.phase == .water {
+                self.phase = .ice
                 self.autoFroze = true
             } else if b > 0.4, self.autoFroze {
-                self.isIce = false
+                if self.phase == .ice { self.phase = .water }
                 self.autoFroze = false
             }
         }
@@ -119,7 +131,13 @@ final class GameModel: ObservableObject {
 
     func toggleIce() {
         autoFroze = false
-        isIce.toggle()
+        phase = (phase == .ice) ? .water : .ice
+    }
+
+    /// Steam toggle; from ice this sublimates straight to vapor.
+    func toggleSteam() {
+        autoFroze = false
+        phase = (phase == .steam) ? .water : .steam
     }
 
     func resetLevel() { scene.reloadCurrent() }

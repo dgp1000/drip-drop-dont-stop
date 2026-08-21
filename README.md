@@ -68,6 +68,27 @@ then `simctl io <sim> screenshot`. No effect on normal launches.
     fall (260 ink), freeze on the perch, skate the grates, puff the pit,
     then ride the lift and step off at the apex onto the goal ledge.
 
+**v1.1 adds STEAM** — a third phase (a button, like Freeze; tapping it from
+ice sublimates directly). Vapor rises on its own buoyancy, drifts with
+reduced tilt authority, ignores floor drains and grates, and auto-condenses
+back to water after 3.5 s. It cannot enter the basin (liquid only), blowing
+does nothing to it, and icicles condense it dead — which is what keeps the
+existing no-fly ceilings honest. Steam is per-level gated
+(`Level.steamAllowed`, same precedent as ink): levels 1–13 never offer it,
+so their tuning is untouched. Dying as steam respawns as water; dying as
+ice still keeps ice (Switchback relies on that).
+
+14. **Vapor** (steam intro) — rise over the divider, condense, roll home.
+15. **Stepping Stones** — the floor drains everything; vapor-hop between
+    three stones on the condensation clock.
+16. **Cold Front** — icicle bands with alternating gaps and a mid-way
+    perch. Teaches that icicles kill vapor.
+17. **Boiler Room** — freeze to land on a grate floor, skate right, then
+    sublime ice→steam and condense on the high ledge.
+18. **Cloudburst** (capstone) — drain floor, icicle ceiling, 300 ink:
+    carve a catch-slide, steam between perches, condense onto the goal
+    shelf.
+
 **Movers** (`Level.movers`) are oscillating platforms (ease-in-out cycle).
 Vertical elevators only — SpriteKit static bodies don't carry passengers
 horizontally, so horizontal ferries are unreliable by construction. Design

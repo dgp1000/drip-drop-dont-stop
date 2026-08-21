@@ -35,6 +35,8 @@ final class DropletVisual: SKNode {
     private let uStretch = SKUniform(name: "u_stretch", vectorFloat2: vector_float2(0, 0))
     private let uWob = SKUniform(name: "u_wob", float: 0)
     private let uIce = SKUniform(name: "u_ice", float: 0)
+    private let uSteam = SKUniform(name: "u_steam", float: 0)
+    private let uRem = SKUniform(name: "u_rem", float: 1)   // vapor time left, 1→0
     private let uLift = SKUniform(name: "u_lift", float: 0)
     private let uGround = SKUniform(name: "u_ground", float: 0)
     private let uWorldY = SKUniform(name: "u_worldY", float: 0)
@@ -43,6 +45,7 @@ final class DropletVisual: SKNode {
     private var history: [(p: CGPoint, t: TimeInterval)] = []
     private var wobble: CGFloat = 0
     private var iceMix: CGFloat = 0
+    private var steamMix: CGFloat = 0
     private var groundMix: CGFloat = 0
 
     init(sceneHeight: CGFloat) {
@@ -61,7 +64,7 @@ final class DropletVisual: SKNode {
 
         let shader = SKShader(source: Self.source)
         shader.uniforms = [SKUniform(name: "u_r0", float: Self.mainRadiusUV),
-                           uStretch, uWob, uIce, uLift, uGround,
+                           uStretch, uWob, uIce, uSteam, uRem, uLift, uGround,
                            uWorldY, uSceneH] + uP + uR
         sprite.shader = shader
 
@@ -91,23 +94,26 @@ final class DropletVisual: SKNode {
 
     /// Sync the visual to the physics ball once per frame (didFinishUpdate).
     func sync(center: CGPoint, velocity: CGVector, grounded: Bool,
-              isIce: Bool, lift: CGFloat, now: TimeInterval, dt: CGFloat) {
+              phase: Phase, steamRemaining: CGFloat,
+              lift: CGFloat, now: TimeInterval, dt: CGFloat) {
         position = center
         let speed = hypot(velocity.dx, velocity.dy)
 
-        // Phase morph + wobble decay + grounded settle, all smoothed.
+        // Phase morphs + wobble decay + grounded settle, all smoothed.
         let clampedDT = min(max(dt, 0), 0.05)
-        let target: CGFloat = isIce ? 1 : 0
-        iceMix += (target - iceMix) * min(1, clampedDT * 9)
+        iceMix += ((phase == .ice ? 1 : 0) - iceMix) * min(1, clampedDT * 9)
+        steamMix += ((phase == .steam ? 1 : 0) - steamMix) * min(1, clampedDT * 7)
         wobble *= exp(-clampedDT * 5.5)
-        let settle: CGFloat = (grounded && speed < 220) ? 1 : 0
+        let settle: CGFloat = (grounded && speed < 220 && phase != .steam) ? 1 : 0
         groundMix += (settle - groundMix) * min(1, clampedDT * 7)
 
         // Trail: recent positions become shrinking satellite blobs. Ice is
-        // rigid, so its trail collapses with the phase morph.
+        // rigid, so its trail collapses with the phase morph; vapor smears
+        // even at drift speeds.
         history.append((center, now))
         history.removeAll { now - $0.t > 0.17 }
-        let liquid = (1 - iceMix) * min(1, max(0, speed - 90) / 240)
+        let liquid = max((1 - iceMix) * min(1, max(0, speed - 90) / 240),
+                         steamMix * min(1, speed / 180) * 0.8)
         let samples = history.count
         for i in 0..<Self.trailCount {
             // Oldest history first, spread across the slots.
@@ -130,11 +136,13 @@ final class DropletVisual: SKNode {
         }
         uWob.floatValue = Float(wobble * (1 - iceMix * 0.85))
         uIce.floatValue = Float(iceMix)
+        uSteam.floatValue = Float(steamMix)
+        uRem.floatValue = Float(steamRemaining)
         uLift.floatValue = Float(lift)
         uGround.floatValue = Float(groundMix * (1 - iceMix))
         uWorldY.floatValue = Float(center.y)
 
-        contactShadow.alpha = groundMix * 0.42
+        contactShadow.alpha = groundMix * 0.42 * (1 - steamMix)
     }
 
     // MARK: shader
@@ -170,7 +178,10 @@ final class DropletVisual: SKNode {
         // Metaball field + analytic gradient (for the surface normal).
         float ang = atan(uv.y, uv.x);
         float wr = 1.0 + u_wob * 0.20 * sin(ang * 3.0 + u_time * 26.0)
-                       + u_wob * 0.09 * sin(ang * 5.0 - u_time * 31.0);
+                       + u_wob * 0.09 * sin(ang * 5.0 - u_time * 31.0)
+                       // vapor billows slowly all the time
+                       + u_steam * (0.10 * sin(ang * 2.0 + u_time * 3.1)
+                                  + 0.07 * sin(ang * 4.0 - u_time * 2.3));
         float r0 = u_r0 * wr;
         float d2 = max(dot(uv, uv), 0.00001);
         float field = r0 * r0 / d2;
@@ -187,9 +198,10 @@ final class DropletVisual: SKNode {
         q = uv - u_p5; d2 = max(dot(q, q), 0.00001);
         field += u_r5 * u_r5 / d2; grad += u_r5 * u_r5 * -2.0 * q / (d2 * d2);
 
-        // Crisp meniscus edge — fuzz reads as glow, not liquid.
-        float lo = mix(0.94, 0.97, u_ice);
-        float hi = mix(1.10, 1.06, u_ice);
+        // Crisp meniscus edge — fuzz reads as glow, not liquid. Vapor is the
+        // exception: its edge is deliberately soft and wide.
+        float lo = mix(mix(0.94, 0.97, u_ice), 0.45, u_steam);
+        float hi = mix(mix(1.10, 1.06, u_ice), 1.55, u_steam);
         float edge = smoothstep(lo, hi, field);
 
         // Surface normal of the droplet dome. The field gradient gives the
@@ -246,10 +258,17 @@ final class DropletVisual: SKNode {
         vec3 H1 = normalize(L + V);
         ice += vec3(1.0) * pow(max(dot(n, H1), 0.0), 60.0) * 0.8;
 
-        vec3 col = mix(water, ice, u_ice);
+        // Steam: a lit puff — no refraction, no glint, just soft scatter,
+        // thinning as its condensation clock (u_rem 1→0) runs down.
+        float cl = 0.55 + 0.45 * max(dot(n, L), 0.0);
+        vec3 cloud = vec3(0.82, 0.86, 0.94) * cl;
+
+        vec3 col = mix(mix(water, ice, u_ice), cloud, u_steam);
         // Water reads photoreal because you *see through it* — near-solid
         // alpha works since the shader paints the refracted backdrop itself.
-        float alpha = edge * mix(0.93, 1.0, u_ice);
+        float aBody = edge * mix(0.93, 1.0, u_ice);
+        float aCloud = edge * (0.28 + 0.34 * u_rem);
+        float alpha = mix(aBody, aCloud, u_steam);
 
         // Blow halo: the sub-threshold field skirt glows when lifting.
         float halo = (smoothstep(0.26, 0.95, field) - edge) * u_lift;
