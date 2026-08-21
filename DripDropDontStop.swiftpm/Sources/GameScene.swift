@@ -64,7 +64,7 @@ enum Levels {
               zones: [
                   Zone(rect: CGRect(x: 0.76, y: 0.015, width: 0.20, height: 0.05), kind: .goal),
               ],
-              par: 12),
+              par: 9),
         Level(name: "Updraft",
               hint: "BLOW on the microphone to lift the droplet over the wall (or touch & hold the screen).",
               spawn: CGPoint(x: 0.15, y: 0.25),
@@ -74,7 +74,7 @@ enum Levels {
               zones: [
                   Zone(rect: CGRect(x: 0.76, y: 0.015, width: 0.20, height: 0.05), kind: .goal),
               ],
-              par: 15),
+              par: 12),
         Level(name: "Cold Crossing",
               hint: "Tap FREEZE to turn to ice — ice slides over the blue grates that swallow water.",
               spawn: CGPoint(x: 0.90, y: 0.72),
@@ -85,7 +85,7 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.28, y: 0.00, width: 0.44, height: 0.035), kind: .grate),
                   Zone(rect: CGRect(x: 0.80, y: 0.015, width: 0.16, height: 0.05), kind: .goal),
               ],
-              par: 18),
+              par: 14),
         Level(name: "Leap of Frost",
               hint: "FREEZE at the top, then ride the ramp — only fast ice makes the jump. Water is too slow.",
               spawn: CGPoint(x: 0.08, y: 0.88),
@@ -101,7 +101,7 @@ enum Levels {
                        size: CGSize(width: 0.40, height: 0.028),
                        rotation: -0.28),
               ],
-              par: 20),
+              par: 16),
         Level(name: "Aqueduct",
               hint: "DRAW on the screen with your finger to create a path to the basin. Drawn paths fade.",
               spawn: CGPoint(x: 0.15, y: 0.90),
@@ -111,7 +111,7 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.87, y: 0.015, width: 0.12, height: 0.05), kind: .goal),
               ],
               inkBudget: 420,
-              par: 15),
+              par: 12),
         Level(name: "Icefall",
               hint: "DRAW a slide down to the LEFT, then FREEZE and fly to the ledge — under the icicles. One stroke of ink.",
               spawn: CGPoint(x: 0.90, y: 0.88),
@@ -124,7 +124,7 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.01, y: 0.39, width: 0.11, height: 0.05), kind: .goal),
               ],
               inkBudget: 300,
-              par: 25),
+              par: 20),
         Level(name: "The Chimney",
               hint: "BLOW in short breaths to climb. Rest on the shelves — but land clear of the slatted patches.",
               spawn: CGPoint(x: 0.80, y: 0.08),
@@ -139,7 +139,7 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.45, y: 0.55, width: 0.25, height: 0.02), kind: .grate),
                   Zone(rect: CGRect(x: 0.05, y: 0.775, width: 0.14, height: 0.05), kind: .goal),
               ],
-              par: 40),
+              par: 32),
         Level(name: "Boost Slide",
               hint: "FREEZE, tilt to skate, and BLOW quick puffs to hop the bump and the pit. Stay LOW — icicles above.",
               spawn: CGPoint(x: 0.07, y: 0.10),
@@ -152,7 +152,7 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.15, y: 0.00, width: 0.85, height: 0.035), kind: .grate),
                   Zone(rect: CGRect(x: 0.88, y: 0.015, width: 0.11, height: 0.05), kind: .goal),
               ],
-              par: 25),
+              par: 20),
         Level(name: "Switchback",
               hint: "FREEZE early — grates on every storey. Work right, drop, work LEFT over the pit, then skate home.",
               spawn: CGPoint(x: 0.06, y: 0.90),
@@ -166,7 +166,7 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.00, y: 0.00, width: 0.55, height: 0.035), kind: .grate),
                   Zone(rect: CGRect(x: 0.02, y: 0.015, width: 0.12, height: 0.05), kind: .goal),
               ],
-              par: 30),
+              par: 24),
         Level(name: "Meltpoint",
               hint: "FREEZE for the grates, puff the pit — then MELT mid-air to drop short of the far drain. Ice flies; water falls.",
               spawn: CGPoint(x: 0.06, y: 0.90),
@@ -178,7 +178,7 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.76, y: 0.015, width: 0.12, height: 0.05), kind: .goal),
                   Zone(rect: CGRect(x: 0.90, y: 0.00, width: 0.10, height: 0.035), kind: .drain),
               ],
-              par: 22),
+              par: 18),
         Level(name: "Rising Water",
               hint: "The lift sinks flush with the floor — but the floor around it swallows water. Commit when it's LOW, ride it up, roll off at the top.",
               spawn: CGPoint(x: 0.08, y: 0.88),
@@ -194,7 +194,7 @@ enum Levels {
                         size: CGSize(width: 0.22, height: 0.03),
                         travel: CGVector(dx: 0, dy: 0.34), period: 5),
               ],
-              par: 30),
+              par: 24),
         Level(name: "Cold Storage",
               hint: "FREEZE before you land — the shelves are slatted. Ride the lift DOWN, and mind the gap on the way off.",
               spawn: CGPoint(x: 0.08, y: 0.86),
@@ -214,7 +214,7 @@ enum Levels {
                         size: CGSize(width: 0.20, height: 0.03),
                         travel: CGVector(dx: 0, dy: 0.135), period: 4.5),
               ],
-              par: 40),
+              par: 32),
         Level(name: "The Long Pour",
               hint: "Everything at once: DRAW a catch-slide as you fall, FREEZE on the perch, skate, puff the pit — then ride the lift to the top.",
               spawn: CGPoint(x: 0.42, y: 0.92),
@@ -234,7 +234,7 @@ enum Levels {
                         travel: CGVector(dx: 0, dy: 0.29), period: 5),
               ],
               inkBudget: 260,
-              par: 45),
+              par: 38),
     ]
 }
 
@@ -260,6 +260,12 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     private let airSteer: CGFloat = 0.15        // tilt authority while airborne (ballistic air)
 
     private var droplet: SKShapeNode!
+    private var dropletVisual: DropletVisual?
+    private var cam: SKCameraNode?
+    private var spawnMarker: SKNode?
+    private var currentLift: CGFloat = 0
+    private var lastUpdateTime: TimeInterval = 0
+    private var frameDT: CGFloat = 1 / 60
     private(set) var levelIndex = 0
     private var holdingLift = false
     private var transitioning = false
@@ -293,10 +299,11 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     private lazy var bgTexture: SKTexture = {
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: 64, height: 512))
         let img = renderer.image { ctx in
-            let colors = [UIColor(red: 0.10, green: 0.11, blue: 0.20, alpha: 1).cgColor,
-                          UIColor(red: 0.05, green: 0.06, blue: 0.10, alpha: 1).cgColor]
+            let colors = [UIColor(red: 0.11, green: 0.13, blue: 0.26, alpha: 1).cgColor,
+                          UIColor(red: 0.06, green: 0.08, blue: 0.16, alpha: 1).cgColor,
+                          UIColor(red: 0.02, green: 0.04, blue: 0.08, alpha: 1).cgColor]
             let grad = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
-                                  colors: colors as CFArray, locations: [0, 1])!
+                                  colors: colors as CFArray, locations: [0, 0.55, 1])!
             ctx.cgContext.drawLinearGradient(grad, start: .zero,
                                              end: CGPoint(x: 0, y: 512), options: [])
         }
@@ -315,11 +322,11 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         if let action = sounds[name] { run(action) }
     }
 
-    /// Particle burst — death splashes and goal celebrations.
-    private func burst(at p: CGPoint, color: UIColor, up: Bool) {
+    /// Particle burst — death splashes, goal celebrations, impact spray.
+    private func burst(at p: CGPoint, color: UIColor, up: Bool, count: Int = 20) {
         let e = SKEmitterNode()
         e.particleTexture = dotTexture
-        e.numParticlesToEmit = 20
+        e.numParticlesToEmit = count
         e.particleBirthRate = 600
         e.particleLifetime = 0.55
         e.particleSpeed = 230
@@ -390,7 +397,17 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         bg.size = size
         bg.position = CGPoint(x: size.width / 2, y: size.height / 2)
         bg.zPosition = -100
+        bg.shader = Decor.causticShader
         addChild(bg)
+        addChild(Decor.vignette(size: size))
+        for mote in Decor.motes(size: size) { addChild(mote) }
+
+        // removeAllChildren() took the camera with it; small shakes only.
+        let camera = SKCameraNode()
+        camera.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        addChild(camera)
+        self.camera = camera
+        cam = camera
 
         physicsBody = SKPhysicsBody(edgeLoopFrom: frame)
         physicsBody?.categoryBitMask = Cat.wall
@@ -437,6 +454,9 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
                 self.droplet.physicsBody?.isDynamic = true
                 self.levelStartTime = CACurrentMediaTime()
                 self.runState = .playing
+                self.spawnMarker?.run(.sequence([.fadeOut(withDuration: 0.4),
+                                                 .removeFromParent()]))
+                self.spawnMarker = nil
             },
             .wait(forDuration: 0.6),
             .run { [weak self] in self?.model?.countdown = nil },
@@ -446,10 +466,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     func reloadCurrent() { loadLevel(levelIndex) }
 
     private func addWall(_ r: CGRect) {
-        let node = SKShapeNode(rectOf: r.size, cornerRadius: 3)
-        node.position = CGPoint(x: r.midX, y: r.midY)
-        node.fillColor = UIColor(white: 0.32, alpha: 1)
-        node.strokeColor = UIColor(white: 0.48, alpha: 1)
+        let node = Decor.slab(rect: r)
         let body = SKPhysicsBody(rectangleOf: r.size)
         body.isDynamic = false
         body.categoryBitMask = Cat.wall
@@ -463,9 +480,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     private func addMover(_ m: Mover) {
         let sz = CGSize(width: m.size.width * size.width,
                         height: m.size.height * size.height)
-        let node = SKShapeNode(rectOf: sz, cornerRadius: 3)
-        node.fillColor = UIColor(white: 0.42, alpha: 1)
-        node.strokeColor = UIColor.systemCyan.withAlphaComponent(0.7)
+        let node = Decor.moverSlab(size: sz)
         let travel = CGVector(dx: m.travel.dx * size.width,
                               dy: m.travel.dy * size.height)
         let mid = point(m.center)
@@ -488,11 +503,10 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     private func addRamp(_ ramp: Ramp) {
         let size = CGSize(width: ramp.size.width * self.size.width,
                           height: ramp.size.height * self.size.height)
-        let node = SKShapeNode(rectOf: size, cornerRadius: 3)
+        let node = Decor.slab(rect: CGRect(origin: .zero, size: size)
+            .offsetBy(dx: -size.width / 2, dy: -size.height / 2))
         node.position = point(ramp.center)
         node.zRotation = ramp.rotation
-        node.fillColor = UIColor(white: 0.32, alpha: 1)
-        node.strokeColor = UIColor(white: 0.48, alpha: 1)
         let body = SKPhysicsBody(rectangleOf: size)
         body.isDynamic = false
         body.categoryBitMask = Cat.wall
@@ -503,34 +517,18 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
 
     /// Zones are purely visual — their gameplay effect comes from the
     /// per-frame geometric checks in update(), not physics bodies.
+    /// Visual language: goal = glowing pool, floor drain = ember pit,
+    /// elevated drain = hanging icicles, grate = cyan slats.
     private func addZone(_ z: Zone) {
         let r = rect(z.rect)
-        let node = SKShapeNode(rectOf: r.size, cornerRadius: 2)
-        node.position = CGPoint(x: r.midX, y: r.midY)
-
+        let node: SKNode
         switch z.kind {
         case .goal:
-            node.fillColor = UIColor.systemGreen.withAlphaComponent(0.35)
-            node.strokeColor = UIColor.systemGreen
-            node.run(.repeatForever(.sequence([
-                .fadeAlpha(to: 0.55, duration: 0.6),
-                .fadeAlpha(to: 1.0, duration: 0.6),
-            ])))
+            node = Decor.goalPool(rect: r)
         case .drain:
-            node.fillColor = UIColor.systemRed.withAlphaComponent(0.35)
-            node.strokeColor = UIColor.systemRed
+            node = z.rect.minY > 0.06 ? Decor.icicles(rect: r) : Decor.drainPit(rect: r)
         case .grate:
-            node.fillColor = UIColor.systemCyan.withAlphaComponent(0.10)
-            node.strokeColor = UIColor.systemCyan.withAlphaComponent(0.6)
-            let slatCount = max(3, Int(r.width / 18))
-            for s in 0..<slatCount {
-                let slat = SKShapeNode(rectOf: CGSize(width: 3, height: r.height * 0.7))
-                slat.fillColor = UIColor.systemCyan.withAlphaComponent(0.5)
-                slat.strokeColor = .clear
-                let x = -r.width / 2 + r.width * (CGFloat(s) + 0.5) / CGFloat(slatCount)
-                slat.position = CGPoint(x: x, y: 0)
-                node.addChild(slat)
-            }
+            node = Decor.grate(rect: r)
         }
         addChild(node)
     }
@@ -542,9 +540,12 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     private func spawnDroplet(at p: CGPoint) {
+        // The physics ball is invisible; DropletVisual draws the liquid.
         droplet = SKShapeNode(circleOfRadius: 14)
         droplet.position = p
-        droplet.lineWidth = 2
+        droplet.fillColor = .clear
+        droplet.strokeColor = .clear
+        droplet.lineWidth = 0
         let body = SKPhysicsBody(circleOfRadius: 14)
         body.categoryBitMask = Cat.droplet
         body.collisionBitMask = Cat.wall
@@ -554,14 +555,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         body.usesPreciseCollisionDetection = true
         droplet.physicsBody = body
 
-        // Glint — reads as liquid, spins as it rolls.
-        let shine = SKShapeNode(circleOfRadius: 4.5)
-        shine.fillColor = UIColor.white.withAlphaComponent(0.5)
-        shine.strokeColor = .clear
-        shine.position = CGPoint(x: -5, y: 5)
-        droplet.addChild(shine)
-
-        // Motion trail, fed by speed in update().
+        // Speed-streak spray, fed by speed in update().
         let t = SKEmitterNode()
         t.particleTexture = dotTexture
         t.particleBirthRate = 0
@@ -576,22 +570,28 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         trail = t
 
         addChild(droplet)
+
+        let visual = DropletVisual()
+        visual.position = p
+        addChild(visual)
+        dropletVisual = visual
+
+        let marker = Decor.spawnRing(at: p)
+        addChild(marker)
+        spawnMarker = marker
     }
 
-    /// Water vs ice: same ball, different physics material and look.
+    /// Water vs ice: same ball, different physics material. The look is the
+    /// shader's job — DropletVisual morphs between phases on its own.
     private func applyPhase() {
         guard let model, let body = droplet?.physicsBody else { return }
         iceApplied = model.isIce
         if iceApplied {
-            droplet.fillColor = UIColor(red: 0.82, green: 0.93, blue: 1.0, alpha: 1)
-            droplet.strokeColor = .white
             trail?.particleColor = .white
             body.friction = 0.02
             body.linearDamping = 0.05
             body.restitution = 0.08
         } else {
-            droplet.fillColor = UIColor(red: 0.30, green: 0.65, blue: 1.0, alpha: 0.95)
-            droplet.strokeColor = UIColor(red: 0.55, green: 0.80, blue: 1.0, alpha: 1)
             // Damping 0.8 is water's identity: it clings in flight, which is
             // exactly why it can't clear the level-4 pit and ice can.
             trail?.particleColor = UIColor(red: 0.45, green: 0.75, blue: 1.0, alpha: 1)
@@ -605,6 +605,8 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
 
     override func update(_ currentTime: TimeInterval) {
         guard let model, let body = droplet?.physicsBody else { return }
+        frameDT = CGFloat(min(max(currentTime - lastUpdateTime, 0), 0.05))
+        lastUpdateTime = currentTime
 
         // Tilt IS gravity — but "up" belongs to breath alone (dy floored so
         // flipping the phone can't invert the world), and full tilt authority
@@ -631,6 +633,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         // During the countdown the world holds its breath: no gravity
         // steering, no lift, no zone checks, no score drain.
         guard runState == .playing else {
+            currentLift = 0
             rolling.update(speed: 0, grounded: false, isIce: iceApplied)
             return
         }
@@ -646,6 +649,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         // to fight gravity. This is why earlier versions felt dead.
         let pointsPerMeter: CGFloat = 150
         let lift = max(holdingLift ? 0.9 : 0, CGFloat(model.blowLevel))
+        currentLift = lift > 0.10 ? lift : 0
         if lift > 0.10 {
             // Proportional all the way down — no free weightlessness at the
             // threshold. Hover sits around 40% on the meter: below that a
@@ -655,9 +659,6 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
             if body.velocity.dy < maxRiseSpeed {
                 body.applyForce(CGVector(dx: 0, dy: body.mass * accel))
             }
-            droplet.glowWidth = 5 * lift
-        } else {
-            droplet.glowWidth = 0
         }
 
         // Per-phase speed cap: water can't hold together at speed; ice can.
@@ -670,10 +671,8 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
             body.velocity = CGVector(dx: v.dx * k, dy: v.dy * k)
         }
 
-        // Crude squash & stretch so it reads as liquid, not a marble.
-        let s = min(speed / 1200, 0.22) * (iceApplied ? 0.3 : 1.0)
-        droplet.xScale = 1 + s
-        droplet.yScale = 1 - s
+        // Squash, stretch, wobble and drip all live in the metaball shader
+        // now — see DropletVisual.sync, driven from didFinishUpdate().
 
         // Trail intensity follows speed.
         trail?.particleBirthRate = speed > 250 ? min(40, speed / 15) : 0
@@ -706,18 +705,52 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
 
+    /// Runs after physics each frame: sync the liquid visual to the ball.
+    override func didFinishUpdate() {
+        guard let model, let droplet, let body = droplet.physicsBody,
+              let visual = dropletVisual else { return }
+        visual.sync(center: droplet.position,
+                    velocity: body.velocity,
+                    grounded: !body.allContactedBodies().isEmpty,
+                    isIce: model.isIce,
+                    lift: currentLift,
+                    now: lastUpdateTime,
+                    dt: frameDT)
+    }
+
+    /// Tiny deterministic camera shake; m scales the amplitude.
+    private func shake(_ m: CGFloat) {
+        guard let cam else { return }
+        let home = CGPoint(x: size.width / 2, y: size.height / 2)
+        let offsets: [CGPoint] = [CGPoint(x: 5, y: 2), CGPoint(x: -4, y: 3),
+                                  CGPoint(x: 3, y: -3), CGPoint(x: -2, y: 1),
+                                  CGPoint(x: 1, y: -1), .zero]
+        cam.removeAction(forKey: "shake")
+        cam.run(.sequence(offsets.map { o in
+            .move(to: CGPoint(x: home.x + o.x * m, y: home.y + o.y * m), duration: 0.03)
+        }), withKey: "shake")
+    }
+
     // MARK: Contacts
 
     func didBegin(_ contact: SKPhysicsContact) {
-        // Only wall contacts reach here now; haptics plus impact sounds.
+        // Only wall contacts reach here now; haptics, sounds, jelly wobble.
         let v = droplet?.physicsBody?.velocity ?? .zero
         let speed = hypot(v.dx, v.dy)
         guard speed > 220 else { return }
         bump.impactOccurred(intensity: min(1, speed / 900))
+        dropletVisual?.impact(min(1, speed / 1000))
+        if speed > 750 { shake(min(1, speed / 1400)) }
         let now = CACurrentMediaTime()
         if now - lastPlink > 0.09 {
             lastPlink = now
             sfx(iceApplied ? "ice_tap" : "plink")
+            // Water sheds a few droplets on a hard hit; ice stays whole.
+            if !iceApplied, speed > 500 {
+                burst(at: droplet.position,
+                      color: UIColor(red: 0.4, green: 0.72, blue: 1, alpha: 1),
+                      up: false, count: 7)
+            }
         }
     }
 
@@ -742,6 +775,8 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
                           .sequence([.wait(forDuration: 0.4), .fadeOut(withDuration: 0.4)])]))
 
         let next = levelIndex + 1
+        dropletVisual?.run(.group([.scale(to: 0.1, duration: 0.25),
+                                   .fadeOut(withDuration: 0.25)]))
         droplet.run(.group([.scale(to: 0.1, duration: 0.25),
                             .fadeOut(withDuration: 0.25)])) { [weak self] in
             guard let self, let model = self.model else { return }
@@ -758,10 +793,15 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         guard !transitioning else { return }
         UINotificationFeedbackGenerator().notificationOccurred(.error)
         sfx("die")
-        burst(at: droplet.position, color: droplet.fillColor, up: false)
+        let splash = iceApplied
+            ? UIColor.white
+            : UIColor(red: 0.35, green: 0.68, blue: 1, alpha: 1)
+        burst(at: droplet.position, color: splash, up: false, count: 30)
+        shake(0.7)
         droplet.physicsBody?.velocity = .zero
         droplet.physicsBody?.angularVelocity = 0
         droplet.position = point(Levels.all[levelIndex].spawn)
+        dropletVisual?.reset()   // no trail streak across the teleport
     }
 
     // MARK: Touch — stationary hold lifts (mic fallback), a moving finger carves

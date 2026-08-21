@@ -37,6 +37,25 @@ final class GameModel: ObservableObject {
         scene = GameScene(size: UIScreen.main.bounds.size)
         scene.scaleMode = .resizeFill
         scene.model = self
+
+        // Test harness: `simctl launch <sim> <bundle> -autostart 3` jumps
+        // straight into level 3 so automation can screenshot gameplay
+        // without a tap. No effect on normal launches.
+        let args = ProcessInfo.processInfo.arguments
+        if let i = args.firstIndex(of: "-autostart") {
+            let n = (args.count > i + 1 ? Int(args[i + 1]) : nil) ?? 1
+            let idx = min(max(n - 1, 0), Levels.all.count - 1)
+            let freeze = args.contains("-ice")
+            DispatchQueue.main.async { [weak self] in
+                self?.startGame(at: idx)
+                if freeze {
+                    // After didMove's level reload (which resets to water).
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                        self?.isIce = true
+                    }
+                }
+            }
+        }
     }
 
     // MARK: Flow
