@@ -19,7 +19,7 @@ let package = Package(
             bundleIdentifier: "com.dgperkins.dripdropdontstop",
             teamIdentifier: "48MUH57DEC",
             displayVersion: "1.0",
-            bundleVersion: "2",
+            bundleVersion: "3",
             appIcon: .asset("AppIcon"),
             accentColor: .presetColor(.cyan),
             supportedDeviceFamilies: [
