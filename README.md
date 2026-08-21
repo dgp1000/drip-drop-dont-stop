@@ -153,6 +153,14 @@ blobs — so it stretches into a teardrop in flight, drips behind itself,
 wobbles like jelly on impacts, puddles when it settles, and glows when
 blown; as ice the same shader hardens into a pale faceted crystal with
 twinkling glints. The physics circle is untouched — presentation only.
+The water shading does real droplet optics: a surface normal derived from
+the analytic field gradient drives REFRACTION of the backdrop (SKShaders
+can't sample the framebuffer, so the known bg gradient is recomputed
+per-fragment, with chromatic dispersion), a thin bright rim, one hard
+specular glint, and a fading contact shadow when the drop settles.
+Look lesson (two screenshot rounds): broad glows/caustics read as plasma,
+not liquid — a droplet on a dark ground is a dark transparent body + thin
+bright rim + small hard glint, nothing more.
 GOTCHA: SpriteKit's GLSL→Metal translation cannot handle a bare `return`
 after writing gl_FragColor (it emits a double return and the shader dies at
 runtime, rendering an opaque white quad) — no early-outs in SKShader source.

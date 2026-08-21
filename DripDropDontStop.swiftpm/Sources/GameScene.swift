@@ -571,7 +571,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
 
         addChild(droplet)
 
-        let visual = DropletVisual()
+        let visual = DropletVisual(sceneHeight: size.height)
         visual.position = p
         addChild(visual)
         dropletVisual = visual

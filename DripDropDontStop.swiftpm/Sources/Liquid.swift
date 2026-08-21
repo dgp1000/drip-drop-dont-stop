@@ -4,20 +4,32 @@
 // merges back together like actual liquid. The physics body stays the same
 // plain circle; this file is presentation only.
 //
-// As ice the same shader hardens: the edge sharpens, the body goes pale and
-// faceted, the trail vanishes (ice doesn't smear), and sparkle glints appear.
+// Photoreal pass: the shader derives a 3D surface normal from the analytic
+// gradient of the metaball field and does real droplet optics with it —
+// REFRACTION of the backdrop (SKShaders can't sample the framebuffer, but
+// the backdrop is a known procedural gradient, so the bent background is
+// recomputed per-fragment, with slight chromatic dispersion), fresnel rim
+// reflection, blinn-phong speculars from two lights, and depth-tinted
+// absorption. A soft contact shadow fades in when the drop settles.
+//
+// As ice the same field hardens: faceted pale crystal, sparkle glints.
+//
+// GOTCHA (cost a debugging round): SpriteKit's GLSL→Metal translation
+// cannot handle a bare `return` after writing gl_FragColor — the shader
+// dies at runtime and renders an opaque white quad. No early-outs.
 
 import SpriteKit
 import simd
 
 final class DropletVisual: SKNode {
-    /// Side of the square shader canvas, in points. Trail offsets are
-    /// expressed in canvas UV units (1.0 = quad points).
+    /// Side of the square shader canvas, in points. Must match QUAD in the
+    /// shader source. Trail offsets are in canvas UV units (1.0 = quad pts).
     static let quad: CGFloat = 170
     private static let trailCount = 5
     private static let mainRadiusUV: Float = Float(15.0 / DropletVisual.quad)
 
     private let sprite: SKSpriteNode
+    private let contactShadow: SKSpriteNode
     private let uP: [SKUniform]
     private let uR: [SKUniform]
     private let uStretch = SKUniform(name: "u_stretch", vectorFloat2: vector_float2(0, 0))
@@ -25,13 +37,15 @@ final class DropletVisual: SKNode {
     private let uIce = SKUniform(name: "u_ice", float: 0)
     private let uLift = SKUniform(name: "u_lift", float: 0)
     private let uGround = SKUniform(name: "u_ground", float: 0)
+    private let uWorldY = SKUniform(name: "u_worldY", float: 0)
+    private let uSceneH: SKUniform
 
     private var history: [(p: CGPoint, t: TimeInterval)] = []
     private var wobble: CGFloat = 0
     private var iceMix: CGFloat = 0
     private var groundMix: CGFloat = 0
 
-    override init() {
+    init(sceneHeight: CGFloat) {
         var ps: [SKUniform] = []
         var rs: [SKUniform] = []
         for i in 0..<Self.trailCount {
@@ -40,13 +54,22 @@ final class DropletVisual: SKNode {
         }
         uP = ps
         uR = rs
+        uSceneH = SKUniform(name: "u_sceneH", float: Float(max(sceneHeight, 1)))
         sprite = SKSpriteNode(color: .white, size: CGSize(width: Self.quad, height: Self.quad))
+        contactShadow = SKSpriteNode(texture: Decor.shadow)
         super.init()
 
         let shader = SKShader(source: Self.source)
         shader.uniforms = [SKUniform(name: "u_r0", float: Self.mainRadiusUV),
-                           uStretch, uWob, uIce, uLift, uGround] + uP + uR
+                           uStretch, uWob, uIce, uLift, uGround,
+                           uWorldY, uSceneH] + uP + uR
         sprite.shader = shader
+
+        contactShadow.size = CGSize(width: 42, height: 13)
+        contactShadow.position = CGPoint(x: 0, y: -14)
+        contactShadow.alpha = 0
+        contactShadow.zPosition = -1
+        addChild(contactShadow)
         addChild(sprite)
         zPosition = 10
     }
@@ -109,12 +132,27 @@ final class DropletVisual: SKNode {
         uIce.floatValue = Float(iceMix)
         uLift.floatValue = Float(lift)
         uGround.floatValue = Float(groundMix * (1 - iceMix))
+        uWorldY.floatValue = Float(center.y)
+
+        contactShadow.alpha = groundMix * 0.42
     }
 
     // MARK: shader
 
     private static let source = """
+    // Backdrop gradient, must match GameScene.bgTexture stops.
+    // t: 0 = scene bottom, 1 = scene top.
+    vec3 bgColor(float t) {
+        vec3 top = vec3(0.11, 0.13, 0.26);
+        vec3 mid = vec3(0.06, 0.08, 0.16);
+        vec3 bot = vec3(0.02, 0.04, 0.08);
+        vec3 hi = mix(mid, top, clamp((t - 0.45) / 0.55, 0.0, 1.0));
+        vec3 lo = mix(bot, mid, clamp(t / 0.45, 0.0, 1.0));
+        return t > 0.45 ? hi : lo;
+    }
+
     void main() {
+        float QUAD = 170.0;
         vec2 uv = v_tex_coord - vec2(0.5);
 
         // Elongate space along the velocity: the blob smears with motion.
@@ -129,49 +167,89 @@ final class DropletVisual: SKNode {
         uv.y *= 1.0 + u_ground * 0.22;
         uv.x /= 1.0 + u_ground * 0.12;
 
-        // Metaball field: main blob (wobble-modulated) + trail blobs.
+        // Metaball field + analytic gradient (for the surface normal).
         float ang = atan(uv.y, uv.x);
         float wr = 1.0 + u_wob * 0.20 * sin(ang * 3.0 + u_time * 26.0)
                        + u_wob * 0.09 * sin(ang * 5.0 - u_time * 31.0);
         float r0 = u_r0 * wr;
-        float field = r0 * r0 / max(dot(uv, uv), 0.00001);
+        float d2 = max(dot(uv, uv), 0.00001);
+        float field = r0 * r0 / d2;
+        vec2 grad = r0 * r0 * -2.0 * uv / (d2 * d2);
         vec2 q;
-        q = uv - u_p1; field += u_r1 * u_r1 / max(dot(q, q), 0.00001);
-        q = uv - u_p2; field += u_r2 * u_r2 / max(dot(q, q), 0.00001);
-        q = uv - u_p3; field += u_r3 * u_r3 / max(dot(q, q), 0.00001);
-        q = uv - u_p4; field += u_r4 * u_r4 / max(dot(q, q), 0.00001);
-        q = uv - u_p5; field += u_r5 * u_r5 / max(dot(q, q), 0.00001);
+        q = uv - u_p1; d2 = max(dot(q, q), 0.00001);
+        field += u_r1 * u_r1 / d2; grad += u_r1 * u_r1 * -2.0 * q / (d2 * d2);
+        q = uv - u_p2; d2 = max(dot(q, q), 0.00001);
+        field += u_r2 * u_r2 / d2; grad += u_r2 * u_r2 * -2.0 * q / (d2 * d2);
+        q = uv - u_p3; d2 = max(dot(q, q), 0.00001);
+        field += u_r3 * u_r3 / d2; grad += u_r3 * u_r3 * -2.0 * q / (d2 * d2);
+        q = uv - u_p4; d2 = max(dot(q, q), 0.00001);
+        field += u_r4 * u_r4 / d2; grad += u_r4 * u_r4 * -2.0 * q / (d2 * d2);
+        q = uv - u_p5; d2 = max(dot(q, q), 0.00001);
+        field += u_r5 * u_r5 / d2; grad += u_r5 * u_r5 * -2.0 * q / (d2 * d2);
 
-        // Water has a soft meniscus edge; ice a hard one.
-        float lo = mix(0.86, 0.97, u_ice);
-        float hi = mix(1.30, 1.06, u_ice);
+        // Crisp meniscus edge — fuzz reads as glow, not liquid.
+        float lo = mix(0.94, 0.97, u_ice);
+        float hi = mix(1.10, 1.06, u_ice);
         float edge = smoothstep(lo, hi, field);
-        // (No early-out: SpriteKit's GLSL->Metal translation can't handle a
-        // bare `return` after writing gl_FragColor.)
 
-        // Water body: deep blue shaded toward an inner light.
-        vec2 lightAt = vec2(-0.030, 0.036);
-        float lit = 1.0 - smoothstep(0.0, 0.17, length(uv - lightAt));
-        vec3 water = mix(vec3(0.08, 0.32, 0.72), vec3(0.34, 0.68, 1.0), lit * 0.85);
-        float rim = (1.0 - smoothstep(1.05, 1.65, field)) * edge;
-        water = mix(water, vec3(0.62, 0.88, 1.0), rim * 0.55);
+        // Surface normal of the droplet dome. The field gradient gives the
+        // in-plane slope; blend to flat (z=1) toward the blob center where
+        // the dome levels off. 0.05 sets edge steepness — tuned by eye.
+        vec2 slope = -grad * 0.12;
+        float dome = clamp((field - lo) / 1.6, 0.0, 1.0);
+        slope *= (1.0 - dome * 0.85);
+        vec3 n = normalize(vec3(slope, 1.0));
+        float thickness = sqrt(dome);           // 0 at rim, 1 at center
 
-        // Ice body: pale faceted crystal with animated glints.
+        // --- Water: how a droplet actually photographs on a dark ground —
+        // a dark transparent body (the refracted backdrop), a THIN bright
+        // fresnel rim, and one small hard specular glint. No broad glows:
+        // that reads as plasma, not liquid (learned by screenshot).
+        vec3 V = vec3(0.0, 0.0, 1.0);
+        vec3 L = normalize(vec3(-0.45, 0.60, 0.66));
+        float fres = pow(1.0 - max(n.z, 0.0), 3.0);
+
+        // Refraction: bend the background through the lens, stronger at the
+        // rim, with mild chromatic dispersion. World-space, vertical bg.
+        float bendPts = 60.0 * (0.35 + fres);
+        float wy = u_worldY + uv.y * QUAD;
+        float tR = clamp((wy - n.y * bendPts * 1.15) / u_sceneH, 0.0, 1.0);
+        float tG = clamp((wy - n.y * bendPts)        / u_sceneH, 0.0, 1.0);
+        float tB = clamp((wy - n.y * bendPts * 0.85) / u_sceneH, 0.0, 1.0);
+        vec3 refr = vec3(bgColor(tR).r, bgColor(tG).g, bgColor(tB).b);
+
+        // Transparent body: refracted bg, cool-tinted and glassy-darkened
+        // with thickness.
+        vec3 water = refr * mix(vec3(1.0), vec3(0.60, 0.78, 1.05), thickness * 0.8);
+        water *= 1.0 - 0.15 * thickness;
+        // Thin bright rim — the signature of a droplet. Banded directly off
+        // the field (fresnel alone stays too weak at this dome steepness).
+        float rimBand = smoothstep(lo, lo + 0.10, field)
+                      * (1.0 - smoothstep(lo + 0.10, lo + 0.40, field));
+        water += vec3(0.62, 0.80, 1.0) * (rimBand * 0.85 + fres * 0.35);
+        // Hard key glint up-left + dim counter-glint low-right. Fixed in
+        // blob space, so they ride the wobble/stretch distortion.
+        vec2 hl = uv - vec2(-0.032, 0.038);
+        water += vec3(1.35) * exp(-dot(hl, hl) * 2600.0);
+        vec2 hl2 = uv - vec2(0.030, -0.030);
+        water += vec3(0.45, 0.62, 0.85) * exp(-dot(hl2, hl2) * 3800.0) * 0.55;
+
+        // --- Ice: faceted pale crystal, lit by the same normal ---
         float facet = floor((ang + 3.1416) / 0.9);
         float fh = fract(sin(facet * 17.23) * 43758.55);
         vec3 ice = mix(vec3(0.72, 0.86, 0.99), vec3(0.94, 0.98, 1.0), fh);
+        ice *= 0.75 + 0.35 * max(dot(n, L), 0.0);
         vec2 cell = floor((uv + vec2(0.5)) * 52.0);
         float twinkle = fract(sin(dot(cell, vec2(12.9898, 78.233))) * 43758.5453);
         float sparkle = step(0.992, twinkle) * (0.5 + 0.5 * sin(u_time * 6.0 + twinkle * 40.0));
         ice += vec3(sparkle * 0.7);
+        vec3 H1 = normalize(L + V);
+        ice += vec3(1.0) * pow(max(dot(n, H1), 0.0), 60.0) * 0.8;
 
         vec3 col = mix(water, ice, u_ice);
-
-        // Specular highlight — glassy in both phases.
-        float spec = 1.0 - smoothstep(0.0, 0.045, length(uv - lightAt * 1.15));
-        col += vec3(spec * 0.85);
-
-        float alpha = edge * mix(0.94, 1.0, u_ice);
+        // Water reads photoreal because you *see through it* — near-solid
+        // alpha works since the shader paints the refracted backdrop itself.
+        float alpha = edge * mix(0.93, 1.0, u_ice);
 
         // Blow halo: the sub-threshold field skirt glows when lifting.
         float halo = (smoothstep(0.26, 0.95, field) - edge) * u_lift;
