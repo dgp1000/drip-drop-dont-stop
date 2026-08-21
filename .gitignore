@@ -1,0 +1,5 @@
+.DS_Store
+.xcodebuild/
+xcuserdata/
+*.xcuserstate
+.build/
