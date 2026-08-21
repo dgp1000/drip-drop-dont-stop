@@ -30,7 +30,8 @@ let package = Package(
             ],
             capabilities: [
                 .microphone(purposeString: "Blow into the microphone to push the droplet around.")
-            ]
+            ],
+            additionalInfoPlistContentFilePath: "AdditionalInfo.plist"
         )
     ],
     targets: [
