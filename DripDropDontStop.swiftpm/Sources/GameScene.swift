@@ -703,6 +703,12 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
                 if !model.isIce, circleIntersects(z.rect, center: c, radius: 10) { die() }
             }
         }
+
+        // Failsafe: a moving platform can squeeze the ball through the
+        // zero-thickness edge loop (seen on Rising Water, where the elevator
+        // sinks flush with the floor). Outside the frame no zone can ever
+        // catch it, so escaping the scene counts as a death.
+        if !frame.insetBy(dx: -30, dy: -30).contains(c) { die() }
     }
 
     /// Runs after physics each frame: sync the liquid visual to the ball.
