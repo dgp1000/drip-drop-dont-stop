@@ -825,14 +825,18 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let start = carveStart, let t = touches.first else { return }
         let p = t.location(in: self)
-        if !isCarving, inkBudget > 0, hypot(p.x - start.x, p.y - start.y) > 18 {
-            isCarving = true
+        if !isCarving, hypot(p.x - start.x, p.y - start.y) > 18 {
+            // A moving finger is not a hold: lift ends even on no-ink levels,
+            // otherwise swiping is a free (unintended) updraft.
             holdingLift = false
-            carvePreview = SKShapeNode()
-            carvePreview?.strokeColor = UIColor(red: 0.6, green: 0.9, blue: 1.0, alpha: 0.5)
-            carvePreview?.lineWidth = 5
-            carvePreview?.lineCap = .round
-            addChild(carvePreview!)
+            if inkBudget > 0 {
+                isCarving = true
+                carvePreview = SKShapeNode()
+                carvePreview?.strokeColor = UIColor(red: 0.6, green: 0.9, blue: 1.0, alpha: 0.5)
+                carvePreview?.lineWidth = 5
+                carvePreview?.lineCap = .round
+                addChild(carvePreview!)
+            }
         }
         guard isCarving, let last = carvePoints.last else { return }
         let seg = hypot(p.x - last.x, p.y - last.y)
