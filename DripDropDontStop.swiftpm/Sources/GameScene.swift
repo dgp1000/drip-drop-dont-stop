@@ -473,20 +473,26 @@ enum Levels {
               steamAllowed: true,
               blowAllowed: false,
               mood: .mist),
+        // Playtest lesson (David): a FALLING spawn + ink = carve a catch
+        // slide from your own fall line to anywhere below it — the lift was
+        // optional. Ground starts are the counter: carving can only
+        // redirect falls, so a standing droplet can't carve altitude, and
+        // the lift becomes the only way up.
         Level(name: "Cold Service",
               hint: "The lift only goes up — the way back is yours to build: CARVE a bridge from the apex and skate it home before it evaporates.",
-              spawn: CGPoint(x: 0.45, y: 0.85),   // NOT over the goal ledge
+              spawn: CGPoint(x: 0.88, y: 0.095),  // ground start on the pad
               walls: [
                   CGRect(x: 0.02, y: 0.40, width: 0.21, height: 0.03),   // goal ledge
+                  CGRect(x: 0.80, y: 0.05, width: 0.16, height: 0.03),   // start pad
               ],
               zones: [
                   Zone(rect: CGRect(x: 0.06, y: 0.435, width: 0.12, height: 0.045), kind: .goal),
                   Zone(rect: CGRect(x: 0.00, y: 0.00, width: 1.00, height: 0.035), kind: .grate),
               ],
               movers: [
-                  Mover(center: CGPoint(x: 0.78, y: 0.325),
+                  Mover(center: CGPoint(x: 0.70, y: 0.30),
                         size: CGSize(width: 0.16, height: 0.03),
-                        travel: CGVector(dx: 0, dy: 0.225), period: 4.4),
+                        travel: CGVector(dx: 0, dy: 0.245), period: 4.4),
               ],
               inkBudget: 220,
               par: 30,
