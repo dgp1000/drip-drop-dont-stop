@@ -42,12 +42,24 @@ struct MenuView: View {
 
                 ScrollView {
                     VStack(spacing: 10) {
-                        ForEach(Array(Levels.all.enumerated()), id: \.offset) { i, level in
-                            Button {
-                                model.startGame(at: i)
-                            } label: {
-                                LevelRow(index: i, level: level,
-                                         best: model.bestScores[i])
+                        ForEach(Array(Levels.tiers.enumerated()), id: \.offset) { _, tier in
+                            HStack(spacing: 10) {
+                                Rectangle().fill(.white.opacity(0.14)).frame(height: 1)
+                                Text(tier.title)
+                                    .font(.system(size: 10, weight: .bold))
+                                    .tracking(2.5)
+                                    .foregroundStyle(.white.opacity(0.45))
+                                    .fixedSize()
+                                Rectangle().fill(.white.opacity(0.14)).frame(height: 1)
+                            }
+                            .padding(.top, 8)
+                            ForEach(Array(tier.range), id: \.self) { i in
+                                Button {
+                                    model.startGame(at: i)
+                                } label: {
+                                    LevelRow(index: i, level: Levels.all[i],
+                                             best: model.bestScores[i])
+                                }
                             }
                         }
                     }

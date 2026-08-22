@@ -88,11 +88,13 @@ final class GameModel: ObservableObject {
         runFromStart = (index == 0)
         scene.loadLevel(index)
         screen = .playing
+        GameCenter.shared.setAccessPoint(visible: false)
     }
 
     func backToMenu() {
         finished = false
         screen = .menu
+        GameCenter.shared.setAccessPoint(visible: true)
     }
 
     // MARK: Score records
@@ -107,9 +109,13 @@ final class GameModel: ObservableObject {
 
     func runFinished() {
         finished = true
-        if runFromStart, totalScore > bestRun {
-            bestRun = totalScore
-            UserDefaults.standard.set(totalScore, forKey: "dripdrop.bestRun")
+        if runFromStart {
+            if totalScore > bestRun {
+                bestRun = totalScore
+                UserDefaults.standard.set(totalScore, forKey: "dripdrop.bestRun")
+            }
+            // Honest runs go to the leaderboard (no-op if GC unavailable).
+            GameCenter.shared.submitBestRun(totalScore)
         }
     }
 
@@ -121,6 +127,9 @@ final class GameModel: ObservableObject {
         blow.onLevel = { [weak self] l in self?.blowLevel = l }
         blow.onActive = { [weak self] active in self?.micActive = active }
         blow.start()
+        GameCenter.shared.start { [weak self] _ in
+            GameCenter.shared.setAccessPoint(visible: self?.screen == .menu)
+        }
         UIApplication.shared.isIdleTimerDisabled = true
 
         // Darkness freezes the droplet. iOS has no public ambient-light API,

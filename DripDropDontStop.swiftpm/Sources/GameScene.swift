@@ -106,6 +106,17 @@ struct Level {
 }
 
 enum Levels {
+    /// Menu sections. Purely presentational — level order (and the
+    /// UserDefaults best-score keys, which are index-based) is untouched.
+    static let tiers: [(title: String, range: Range<Int>)] = [
+        ("THE BASICS", 0..<4),      // one verb each: tilt, blow, freeze, momentum
+        ("INK & AIR", 4..<8),       // carving and breath, alone and together
+        ("MASTERY", 8..<10),        // routing and phase timing
+        ("MACHINERY", 10..<13),     // movers
+        ("STEAM", 13..<18),         // the third phase
+        ("EXPERT", 18..<22),        // everything, one route each
+    ]
+
     static let all: [Level] = [
         Level(name: "The Descent",
               hint: "TILT the phone to roll the droplet down into the glowing basin.",
@@ -600,11 +611,11 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     private func loadSounds() {
-        for name in ["plink", "ice_tap", "freeze", "melt", "goal", "die", "tick", "go", "carve", "steam"]
+        for name in ["plink", "ice_tap", "freeze", "melt", "goal", "die", "tick", "go", "carve", "steam", "condense", "crumble"]
         where Bundle.main.url(forResource: name, withExtension: "wav") != nil {
             sounds[name] = SKAction.playSoundFileNamed("\(name).wav", waitForCompletion: false)
         }
-        NSLog("DripDrop: loaded \(sounds.count)/10 sounds")
+        NSLog("DripDrop: loaded \(sounds.count)/12 sounds")
     }
 
     private func sfx(_ name: String) {
@@ -952,7 +963,9 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
                 burst(at: droplet.position,
                       color: UIColor(white: 0.95, alpha: 0.9), up: true, count: 12)
             case .water:
-                sfx("melt")    // melting and condensing share a bloop
+                // Ice melts with a bloop; vapor condenses with its own
+                // double-bloop and patter.
+                sfx(wasSteam ? "condense" : "melt")
                 if wasSteam {
                     // Condensation: the cloud collapses into a shower.
                     burst(at: droplet.position,
@@ -1278,6 +1291,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
             .wait(forDuration: channelLifetime - 0.5),
             .run { [weak self, weak node] in
                 guard let self, let node else { return }
+                self.sfx("crumble")
                 for (i, p) in points.enumerated() where i % 3 == 0 {
                     self.burst(at: node.convert(p, to: self),
                                color: UIColor(red: 0.55, green: 0.85, blue: 1, alpha: 1),
