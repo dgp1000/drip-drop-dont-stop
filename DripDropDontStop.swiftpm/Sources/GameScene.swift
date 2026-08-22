@@ -74,6 +74,9 @@ struct Mover {
     let size: CGSize
     let travel: CGVector    // half-amplitude, unit coords
     let period: Double      // full cycle, seconds
+    /// Fraction of a period to hold at the start position before cycling —
+    /// lets two lifts run anti-phase (0.5) for transfer puzzles.
+    var phase: Double = 0
 }
 
 struct Level {
@@ -411,6 +414,84 @@ enum Levels {
               steamAllowed: true,
               blowAllowed: false,
               mood: .storm),
+        // MARK: expert tier (19–22) — each one combo the game hasn't
+        // demanded yet, hardened to a single route. Design lesson from the
+        // 11–18 pass: vapor rises too fast for height alone to force
+        // anything — steam levels force via horizontal serpentines against
+        // the fuse; the rest force by removing blow/steam entirely.
+        Level(name: "Piston & Pane",
+              hint: "Two lifts, half a beat apart. FREEZE onto the first, cross at the moment they pass, ride DOWN, and roll out under the ice curtain.",
+              spawn: CGPoint(x: 0.10, y: 0.92),
+              walls: [],
+              zones: [
+                  Zone(rect: CGRect(x: 0.80, y: 0.015, width: 0.16, height: 0.05), kind: .goal),
+                  Zone(rect: CGRect(x: 0.00, y: 0.00, width: 1.00, height: 0.035), kind: .drain),
+                  Zone(rect: CGRect(x: 0.72, y: 0.28, width: 0.06, height: 0.30), kind: .drain),  // the ice curtain
+              ],
+              movers: [
+                  Mover(center: CGPoint(x: 0.26, y: 0.35),
+                        size: CGSize(width: 0.16, height: 0.03),
+                        travel: CGVector(dx: 0, dy: 0.20), period: 4.0),
+                  Mover(center: CGPoint(x: 0.60, y: 0.35),
+                        size: CGSize(width: 0.16, height: 0.03),
+                        travel: CGVector(dx: 0, dy: 0.20), period: 4.0, phase: 0.5),
+              ],
+              par: 28,
+              blowAllowed: false,
+              mood: .storm),
+        Level(name: "Inkline",
+              hint: "One line decides it: fall to the perch, DRAW a long slide under the icicle shelf, and ride it off the edge into the basin.",
+              spawn: CGPoint(x: 0.08, y: 0.78),
+              walls: [
+                  CGRect(x: 0.02, y: 0.72, width: 0.18, height: 0.03),   // start shelf
+                  CGRect(x: 0.24, y: 0.47, width: 0.16, height: 0.03),   // the perch
+              ],
+              zones: [
+                  Zone(rect: CGRect(x: 0.76, y: 0.015, width: 0.16, height: 0.05), kind: .goal),
+                  Zone(rect: CGRect(x: 0.00, y: 0.00, width: 1.00, height: 0.035), kind: .drain),
+                  Zone(rect: CGRect(x: 0.52, y: 0.20, width: 0.48, height: 0.04), kind: .drain),  // icicle shelf: thread under
+              ],
+              inkBudget: 340,
+              par: 30,
+              blowAllowed: false,
+              mood: .abyss),
+        Level(name: "Threadneedle",
+              hint: "One breathless burst: STEAM up the LEFT gap, then lean HARD right the whole climb — thread the top gap before you condense.",
+              spawn: CGPoint(x: 0.10, y: 0.15),
+              walls: [
+                  CGRect(x: 0.04, y: 0.08, width: 0.14, height: 0.03),   // spawn shelf
+                  CGRect(x: 0.70, y: 0.80, width: 0.30, height: 0.03),   // goal ledge
+              ],
+              zones: [
+                  Zone(rect: CGRect(x: 0.78, y: 0.83, width: 0.14, height: 0.045), kind: .goal),
+                  Zone(rect: CGRect(x: 0.00, y: 0.00, width: 1.00, height: 0.035), kind: .drain),
+                  Zone(rect: CGRect(x: 0.22, y: 0.34, width: 0.78, height: 0.04), kind: .drain),  // band: gap left
+                  Zone(rect: CGRect(x: 0.00, y: 0.72, width: 0.68, height: 0.04), kind: .drain),  // band: gap right
+                  Zone(rect: CGRect(x: 0.92, y: 0.50, width: 0.08, height: 0.04), kind: .drain),  // wall-hug nub
+              ],
+              par: 16,
+              steamAllowed: true,
+              blowAllowed: false,
+              mood: .mist),
+        Level(name: "Cold Service",
+              hint: "The lift only goes up — the way back is yours to build: CARVE a bridge from the apex and skate it home before it evaporates.",
+              spawn: CGPoint(x: 0.45, y: 0.85),   // NOT over the goal ledge
+              walls: [
+                  CGRect(x: 0.02, y: 0.40, width: 0.21, height: 0.03),   // goal ledge
+              ],
+              zones: [
+                  Zone(rect: CGRect(x: 0.06, y: 0.435, width: 0.12, height: 0.045), kind: .goal),
+                  Zone(rect: CGRect(x: 0.00, y: 0.00, width: 1.00, height: 0.035), kind: .grate),
+              ],
+              movers: [
+                  Mover(center: CGPoint(x: 0.78, y: 0.325),
+                        size: CGSize(width: 0.16, height: 0.03),
+                        travel: CGVector(dx: 0, dy: 0.225), period: 4.4),
+              ],
+              inkBudget: 220,
+              par: 30,
+              blowAllowed: false,
+              mood: .frost),
     ]
 }
 
@@ -701,7 +782,10 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         go.timingMode = .easeInEaseOut
         let back = SKAction.moveBy(x: -travel.dx * 2, y: -travel.dy * 2, duration: half)
         back.timingMode = .easeInEaseOut
-        node.run(.repeatForever(.sequence([go, back])))
+        let cycle = SKAction.repeatForever(.sequence([go, back]))
+        node.run(m.phase > 0
+            ? .sequence([.wait(forDuration: m.phase * m.period), cycle])
+            : cycle)
         addChild(node)
         moverNodes.append(node)
     }

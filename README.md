@@ -95,6 +95,26 @@ ice still keeps ice (Switchback relies on that).
     carve a catch-slide, steam between perches, condense onto the goal
     shelf.
 
+**Expert tier (19–22)**, each a combo the game hadn't demanded yet, all
+blow-gated. Design lesson learned the hard way: vapor rises too fast for
+height alone to force anything on one screen — steam levels force via
+horizontal serpentines against the 2.8 s fuse; everything else forces by
+removing verbs. `Mover.phase` (fraction of a period to hold before
+cycling) exists for anti-phase lift pairs.
+
+19. **Piston & Pane** — anti-phase double lift over an all-drain floor;
+    transfer at the crossing moment, ride down, exit under an ice curtain.
+20. **Inkline** — one 340-ink line decides it: thread a slide under the
+    icicle shelf and launch off its end into the basin (goal listed before
+    the floor drain: same-frame check order makes the basin the only safe
+    landing).
+21. **Threadneedle** — one steam burst through two offset icicle gaps with
+    a wall-hug-blocking nub; full-commitment steering, par 16.
+22. **Cold Service** — ride the lift up, then CARVE the way back: a
+    220-ink bridge from the apex, skated home as ice before it evaporates.
+    (Spawn must never sit above the goal ledge — v1 of this level ended
+    itself in four seconds.)
+
 **Movers** (`Level.movers`) are oscillating platforms (ease-in-out cycle).
 Vertical elevators only — SpriteKit static bodies don't carry passengers
 horizontally, so horizontal ferries are unreliable by construction. Design
