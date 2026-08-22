@@ -359,7 +359,7 @@ enum Levels {
               hint: "Two icicle fronts. STEAM up the LEFT gap, condense on the perch, let it recharge — then up the RIGHT gap to the ledge.",
               spawn: CGPoint(x: 0.10, y: 0.08),
               walls: [
-                  CGRect(x: 0.55, y: 0.50, width: 0.28, height: 0.03),   // the perch
+                  CGRect(x: 0.50, y: 0.50, width: 0.33, height: 0.03),   // the perch
                   CGRect(x: 0.70, y: 0.88, width: 0.30, height: 0.03),   // goal ledge
               ],
               zones: [
@@ -466,7 +466,7 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.78, y: 0.83, width: 0.14, height: 0.045), kind: .goal),
                   Zone(rect: CGRect(x: 0.00, y: 0.00, width: 1.00, height: 0.035), kind: .drain),
                   Zone(rect: CGRect(x: 0.22, y: 0.34, width: 0.78, height: 0.04), kind: .drain),  // band: gap left
-                  Zone(rect: CGRect(x: 0.00, y: 0.72, width: 0.68, height: 0.04), kind: .drain),  // band: gap right
+                  Zone(rect: CGRect(x: 0.00, y: 0.72, width: 0.62, height: 0.04), kind: .drain),  // band: gap right
                   Zone(rect: CGRect(x: 0.92, y: 0.50, width: 0.08, height: 0.04), kind: .drain),  // wall-hug nub
               ],
               par: 16,

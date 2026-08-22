@@ -58,8 +58,10 @@ struct SimTiltKeys: ViewModifier {
     }
 
     private func apply() {
-        let dx: CGFloat = (held.contains("right") ? 0.55 : 0)
-                        - (held.contains("left") ? 0.55 : 0)
+        // Full lean, matching a phone tilted hard on its side — steam
+        // threading margins are tuned against full tilt authority.
+        let dx: CGFloat = (held.contains("right") ? 0.9 : 0)
+                        - (held.contains("left") ? 0.9 : 0)
         var dy: CGFloat = -0.55                       // the gentle default
         if held.contains("down") { dy -= 0.35 }       // dive harder
         if held.contains("up") { dy += 0.30 }         // ease off the pull
