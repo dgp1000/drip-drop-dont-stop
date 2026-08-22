@@ -14,6 +14,7 @@ final class GameModel: ObservableObject {
     @Published var hint = ""
     @Published var phase: Phase = .water
     @Published var steamAllowed = false
+    @Published var blowAllowed = true
     /// False during the post-condense recharge (scene-driven). The cooldown
     /// is what keeps steam a committed leap instead of a second hover verb.
     @Published var steamReady = true

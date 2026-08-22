@@ -52,6 +52,10 @@ struct Level {
     /// Whether the STEAM button is offered. Off for levels 1–13 so the
     /// original tuning survives — same gating precedent as ink.
     var steamAllowed = false
+    /// Whether blowing (and the touch-hold updraft) works. Blow-climb works
+    /// in every phase, making it the universal skeleton key — late levels
+    /// disable it so their intended route is the only route.
+    var blowAllowed = true
 }
 
 enum Levels {
@@ -182,48 +186,61 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.90, y: 0.00, width: 0.10, height: 0.035), kind: .drain),
               ],
               par: 18),
+        // One way only: no blowing, all-grate floor. Freeze mid-fall, board
+        // the (narrow, fast) lift when it's low, ride up, roll off right.
         Level(name: "Rising Water",
-              hint: "The lift sinks flush with the floor — but the floor around it swallows water. Commit when it's LOW, ride it up, roll off at the top.",
+              hint: "No breath in here, and the whole floor is a grate: FREEZE before you land, board the lift LOW, ride it up, roll off at the top.",
               spawn: CGPoint(x: 0.08, y: 0.88),
               walls: [
-                  CGRect(x: 0.78, y: 0.62, width: 0.22, height: 0.03),   // top ledge
+                  CGRect(x: 0.74, y: 0.62, width: 0.24, height: 0.03),   // top ledge
               ],
               zones: [
-                  Zone(rect: CGRect(x: 0.85, y: 0.65, width: 0.12, height: 0.05), kind: .goal),
-                  Zone(rect: CGRect(x: 0.69, y: 0.00, width: 0.31, height: 0.035), kind: .grate),
+                  Zone(rect: CGRect(x: 0.82, y: 0.648, width: 0.12, height: 0.045), kind: .goal),
+                  Zone(rect: CGRect(x: 0.00, y: 0.00, width: 1.00, height: 0.035), kind: .grate),
               ],
               movers: [
                   Mover(center: CGPoint(x: 0.58, y: 0.32),
-                        size: CGSize(width: 0.22, height: 0.03),
-                        travel: CGVector(dx: 0, dy: 0.34), period: 5),
+                        size: CGSize(width: 0.16, height: 0.03),
+                        travel: CGVector(dx: 0, dy: 0.34), period: 4.2),
               ],
-              par: 24),
+              par: 18,
+              blowAllowed: false),
+        // One way only: the mid shelf no longer overhangs the lower shelf
+        // (a direct drop lands in the drain), so the lift is mandatory —
+        // leap onto it from the mid shelf as it passes, ride DOWN, and puff
+        // LOW back across the gap. Icicles over the goal punish high hops.
         Level(name: "Cold Storage",
-              hint: "FREEZE before you land — the shelves are slatted. Ride the lift DOWN, and mind the gap on the way off.",
+              hint: "FREEZE before you land — shelves are slatted. Leap from the mid shelf onto the passing lift, ride DOWN, and puff LOW across the gap. Icicles hang over the goal.",
               spawn: CGPoint(x: 0.08, y: 0.86),
               walls: [
                   CGRect(x: 0.00, y: 0.80, width: 0.35, height: 0.03),   // top shelf
-                  CGRect(x: 0.22, y: 0.55, width: 0.40, height: 0.03),   // mid shelf
-                  CGRect(x: 0.30, y: 0.18, width: 0.35, height: 0.03),   // lower shelf
+                  CGRect(x: 0.22, y: 0.55, width: 0.34, height: 0.03),   // mid shelf
+                  CGRect(x: 0.30, y: 0.18, width: 0.22, height: 0.03),   // lower shelf
               ],
               zones: [
-                  Zone(rect: CGRect(x: 0.31, y: 0.215, width: 0.11, height: 0.05), kind: .goal),
+                  Zone(rect: CGRect(x: 0.33, y: 0.215, width: 0.11, height: 0.05), kind: .goal),
                   Zone(rect: CGRect(x: 0.26, y: 0.58, width: 0.22, height: 0.02), kind: .grate),
                   Zone(rect: CGRect(x: 0.30, y: 0.21, width: 0.18, height: 0.02), kind: .grate),
                   Zone(rect: CGRect(x: 0.00, y: 0.00, width: 1.00, height: 0.035), kind: .drain),
+                  Zone(rect: CGRect(x: 0.30, y: 0.32, width: 0.25, height: 0.035), kind: .drain),  // icicles: no high hops
               ],
               movers: [
                   Mover(center: CGPoint(x: 0.82, y: 0.415),
                         size: CGSize(width: 0.20, height: 0.03),
                         travel: CGVector(dx: 0, dy: 0.135), period: 4.5),
               ],
-              par: 32),
+              par: 26),
+        // One way only: the goal ledge is capped (ceiling + side wall), so
+        // the sole entry is the hop from the lift's apex. Ink is cut to a
+        // catch-slide's worth — it can no longer carve a road to the goal.
         Level(name: "The Long Pour",
-              hint: "Everything at once: DRAW a catch-slide as you fall, FREEZE on the perch, skate, puff the pit — then ride the lift to the top.",
+              hint: "DRAW a catch-slide as you fall (ink is tight), FREEZE on the perch, skate, puff the pit — the goal ledge is capped: enter from the lift side only.",
               spawn: CGPoint(x: 0.42, y: 0.92),
               walls: [
                   CGRect(x: 0.00, y: 0.30, width: 0.25, height: 0.03),   // the perch
                   CGRect(x: 0.52, y: 0.52, width: 0.22, height: 0.03),   // goal ledge
+                  CGRect(x: 0.40, y: 0.63, width: 0.36, height: 0.03),   // cap over the ledge
+                  CGRect(x: 0.48, y: 0.52, width: 0.04, height: 0.14),   // side wall: no left entry
               ],
               zones: [
                   Zone(rect: CGRect(x: 0.55, y: 0.55, width: 0.14, height: 0.05), kind: .goal),
@@ -236,65 +253,91 @@ enum Levels {
                         size: CGSize(width: 0.18, height: 0.03),
                         travel: CGVector(dx: 0, dy: 0.29), period: 5),
               ],
-              inkBudget: 260,
-              par: 38),
+              inkBudget: 160,
+              par: 34),
         // MARK: v1.1 — the steam levels. STEAM rises as vapor, drifts with
         // reduced tilt authority, ignores floor drains and grates, dies to
         // icicles, can't enter the basin, and condenses back to water after
         // a few seconds. Only these levels offer the button (steamAllowed).
+        // One way only: no breath, and the right chamber's floor is a grate
+        // with the basin as its only safe island — steam over the divider,
+        // drift, and condense DIRECTLY above the goal. (Goal listed first:
+        // the same-frame zone check must see it before the grate.)
         Level(name: "Vapor",
-              hint: "Tap STEAM to rise as vapor — it drifts with TILT and condenses back to water in a few seconds. The basin only takes liquid.",
+              hint: "Tap STEAM to rise as vapor and drift with TILT. The right floor is a grate — condense directly over the basin. Vapor can't enter it.",
               spawn: CGPoint(x: 0.15, y: 0.10),
               walls: [
-                  CGRect(x: 0.47, y: 0.00, width: 0.06, height: 0.55),   // the divider
+                  CGRect(x: 0.47, y: 0.00, width: 0.06, height: 0.62),   // the divider
               ],
               zones: [
-                  Zone(rect: CGRect(x: 0.80, y: 0.015, width: 0.16, height: 0.05), kind: .goal),
+                  Zone(rect: CGRect(x: 0.76, y: 0.015, width: 0.18, height: 0.05), kind: .goal),
+                  Zone(rect: CGRect(x: 0.53, y: 0.00, width: 0.47, height: 0.035), kind: .grate),
               ],
-              par: 15,
-              steamAllowed: true),
+              par: 12,
+              steamAllowed: true,
+              blowAllowed: false),
+        // One way only: smaller stones, and an icicle sky caps the hops —
+        // vaporize, condense EARLY, fall onto the next stone, recharge.
         Level(name: "Stepping Stones",
-              hint: "Vapor hops: STEAM up, drift RIGHT, condense on each stone. The floor below swallows water and ice alike.",
-              spawn: CGPoint(x: 0.12, y: 0.18),
+              hint: "Vapor hops under an icicle sky: STEAM up, condense EARLY, land each stone while it recharges. The floor swallows everything.",
+              spawn: CGPoint(x: 0.10, y: 0.18),
               walls: [
-                  CGRect(x: 0.03, y: 0.12, width: 0.20, height: 0.03),
-                  CGRect(x: 0.40, y: 0.18, width: 0.20, height: 0.03),
-                  CGRect(x: 0.78, y: 0.12, width: 0.20, height: 0.03),
+                  CGRect(x: 0.05, y: 0.12, width: 0.14, height: 0.03),
+                  CGRect(x: 0.44, y: 0.20, width: 0.14, height: 0.03),
+                  CGRect(x: 0.81, y: 0.12, width: 0.14, height: 0.03),
               ],
               zones: [
                   Zone(rect: CGRect(x: 0.00, y: 0.00, width: 1.00, height: 0.035), kind: .drain),
-                  Zone(rect: CGRect(x: 0.82, y: 0.155, width: 0.14, height: 0.05), kind: .goal),
+                  Zone(rect: CGRect(x: 0.30, y: 0.48, width: 0.40, height: 0.04), kind: .drain),  // icicle sky
+                  Zone(rect: CGRect(x: 0.83, y: 0.155, width: 0.11, height: 0.05), kind: .goal),
               ],
-              par: 25,
-              steamAllowed: true),
+              par: 20,
+              steamAllowed: true,
+              blowAllowed: false),
+        // One way only: two icicle fronts with offset gaps and a single
+        // perch. Burst up the left gap, drift right, condense on the perch,
+        // recharge, then burst up the right gap onto the top-right ledge.
         Level(name: "Cold Front",
-              hint: "Icicles freeze vapor dead. STEAM through the gaps, rest on the perch, and come at the ledge from the right.",
+              hint: "Two icicle fronts. STEAM up the LEFT gap, condense on the perch, let it recharge — then up the RIGHT gap to the ledge.",
               spawn: CGPoint(x: 0.10, y: 0.08),
               walls: [
-                  CGRect(x: 0.55, y: 0.50, width: 0.25, height: 0.03),   // the perch
-                  CGRect(x: 0.00, y: 0.86, width: 0.30, height: 0.03),   // goal ledge
+                  CGRect(x: 0.55, y: 0.50, width: 0.28, height: 0.03),   // the perch
+                  CGRect(x: 0.70, y: 0.88, width: 0.30, height: 0.03),   // goal ledge
               ],
               zones: [
-                  Zone(rect: CGRect(x: 0.25, y: 0.35, width: 0.75, height: 0.04), kind: .drain),  // icicles, gap left
-                  Zone(rect: CGRect(x: 0.00, y: 0.65, width: 0.75, height: 0.04), kind: .drain),  // icicles, gap right
-                  Zone(rect: CGRect(x: 0.04, y: 0.895, width: 0.14, height: 0.05), kind: .goal),
+                  Zone(rect: CGRect(x: 0.30, y: 0.38, width: 0.70, height: 0.04), kind: .drain),  // front 1: gap left
+                  Zone(rect: CGRect(x: 0.00, y: 0.72, width: 0.55, height: 0.04), kind: .drain),  // front 2: gap right
+                  Zone(rect: CGRect(x: 0.78, y: 0.915, width: 0.14, height: 0.05), kind: .goal),
               ],
-              par: 25,
-              steamAllowed: true),
+              par: 20,
+              steamAllowed: true,
+              blowAllowed: false),
+        // One way only: a full ceiling at 0.60 — solid slab on the left,
+        // icicles on the right — with the ledge below it. Early vapor gets
+        // pinned under the slab, drifts into the icicle seam, and dies; the
+        // only survivable vaporize is from the right half of the grate
+        // floor, which you can only reach by freezing and skating.
         Level(name: "Boiler Room",
-              hint: "FREEZE to land on the grates and skate right — then STEAM straight from ice (sublime!) and condense on the high ledge.",
-              spawn: CGPoint(x: 0.08, y: 0.85),
+              hint: "FREEZE to land on the grates and skate RIGHT — then STEAM straight from ice (sublime!) and condense on the ledge before the icicle ceiling.",
+              spawn: CGPoint(x: 0.08, y: 0.50),
               walls: [
-                  CGRect(x: 0.60, y: 0.40, width: 0.38, height: 0.03),   // the ledge
+                  CGRect(x: 0.00, y: 0.60, width: 0.55, height: 0.03),   // slab cap, left half
+                  CGRect(x: 0.64, y: 0.40, width: 0.30, height: 0.03),   // the ledge
               ],
               zones: [
                   Zone(rect: CGRect(x: 0.00, y: 0.00, width: 1.00, height: 0.035), kind: .grate),
-                  Zone(rect: CGRect(x: 0.78, y: 0.43, width: 0.14, height: 0.05), kind: .goal),
+                  Zone(rect: CGRect(x: 0.55, y: 0.60, width: 0.45, height: 0.04), kind: .drain),  // icicle ceiling, right half
+                  Zone(rect: CGRect(x: 0.78, y: 0.43, width: 0.12, height: 0.05), kind: .goal),
               ],
-              par: 30,
-              steamAllowed: true),
+              par: 24,
+              steamAllowed: true,
+              blowAllowed: false),
+        // One way only (the capstone): a mid icicle band forbids the direct
+        // steam crossing, so the route is CARVE a low slide under it, ride
+        // right as water, then vaporize up the narrow corridor between the
+        // bands (x .70–.75) and condense onto the goal shelf.
         Level(name: "Cloudburst",
-              hint: "Everything at once: DRAW a catch-slide over the drain, STEAM between perches, and condense onto the goal shelf. Mind the icicles.",
+              hint: "The capstone: CARVE a low slide under the icicles, ride it RIGHT, then STEAM up the narrow gap and condense onto the goal shelf.",
               spawn: CGPoint(x: 0.10, y: 0.62),
               walls: [
                   CGRect(x: 0.02, y: 0.55, width: 0.20, height: 0.03),   // start shelf
@@ -302,12 +345,14 @@ enum Levels {
               ],
               zones: [
                   Zone(rect: CGRect(x: 0.00, y: 0.00, width: 1.00, height: 0.035), kind: .drain),
+                  Zone(rect: CGRect(x: 0.25, y: 0.60, width: 0.45, height: 0.04), kind: .drain),  // icicles: no direct crossing
                   Zone(rect: CGRect(x: 0.30, y: 0.82, width: 0.45, height: 0.04), kind: .drain),  // icicles: no ceiling route
                   Zone(rect: CGRect(x: 0.80, y: 0.73, width: 0.14, height: 0.05), kind: .goal),
               ],
-              inkBudget: 300,
-              par: 40,
-              steamAllowed: true),
+              inkBudget: 220,
+              par: 34,
+              steamAllowed: true,
+              blowAllowed: false),
     ]
 }
 
@@ -477,6 +522,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         inkBudget = level.inkBudget
         model?.carveAllowed = level.inkBudget > 0
         model?.steamAllowed = level.steamAllowed
+        model?.blowAllowed = level.blowAllowed
         model?.phase = .water           // every level starts as water
         model?.steamReady = true
         steamElapsed = 0
@@ -775,8 +821,9 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         }
 
         let pointsPerMeter: CGFloat = 150
-        // "Up" belongs to breath — except as vapor, which owns its own rise.
-        let lift = model.phase == .steam ? 0
+        // "Up" belongs to breath — except as vapor, which owns its own
+        // rise, and on blow-gated levels, where breath does nothing.
+        let lift = (model.phase == .steam || !model.blowAllowed) ? 0
                  : max(holdingLift ? 0.9 : 0, CGFloat(model.blowLevel))
         currentLift = lift > 0.10 ? lift : 0
         if lift > 0.10 {

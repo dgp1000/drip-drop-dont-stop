@@ -86,6 +86,7 @@ struct GameView: View {
                         .font(.callout)
                         .foregroundStyle(model.carveAllowed ? Color.cyan : Color.white.opacity(0.3))
 
+                    if model.blowAllowed {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("MIC")
                             .font(.system(size: 9, weight: .bold))
@@ -101,6 +102,7 @@ struct GameView: View {
                         .frame(height: 6)
                     }
                     .frame(maxWidth: 110)
+                    }
 
                     Spacer()
                 }
