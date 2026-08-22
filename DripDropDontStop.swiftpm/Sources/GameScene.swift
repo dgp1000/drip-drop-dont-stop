@@ -465,7 +465,12 @@ enum Levels {
               zones: [
                   Zone(rect: CGRect(x: 0.78, y: 0.83, width: 0.14, height: 0.045), kind: .goal),
                   Zone(rect: CGRect(x: 0.00, y: 0.00, width: 1.00, height: 0.035), kind: .drain),
-                  Zone(rect: CGRect(x: 0.22, y: 0.34, width: 0.78, height: 0.04), kind: .drain),  // band: gap left
+                  // Low first band: the drift phase needs the full climb.
+                  // Rising vapor is already at the speed cap, so sideways
+                  // speed only builds as the velocity vector slowly rotates
+                  // (~150pt/s average, not the naive 218) — the thread is
+                  // impossible without this much runway.
+                  Zone(rect: CGRect(x: 0.22, y: 0.22, width: 0.78, height: 0.04), kind: .drain),  // band: gap left
                   Zone(rect: CGRect(x: 0.00, y: 0.72, width: 0.62, height: 0.04), kind: .drain),  // band: gap right
                   Zone(rect: CGRect(x: 0.92, y: 0.50, width: 0.08, height: 0.04), kind: .drain),  // wall-hug nub
               ],
