@@ -30,8 +30,17 @@ final class BlowDetector {
     private let engine = AVAudioEngine()
     private var smoothed: Float = 0
     var onLevel: ((Float) -> Void)?
+    /// Reports whether the mic is actually delivering breath input. When
+    /// true, touch-and-hold lift is disabled (breath owns "up"); when false
+    /// — permission denied, engine failure — holds take over as the lift.
+    var onActive: ((Bool) -> Void)?
 
     func start() {
+        #if targetEnvironment(simulator)
+        // The simulator routes the Mac's mic unreliably; always use holds
+        // there so mouse testing works.
+        onActive?(false)
+        #else
         let session = AVAudioSession.sharedInstance()
         try? session.setCategory(.playAndRecord, mode: .measurement,
                                  options: [.defaultToSpeaker, .mixWithOthers])
@@ -40,15 +49,20 @@ final class BlowDetector {
         try? session.setAllowHapticsAndSystemSoundsDuringRecording(true)
         try? session.setActive(true)
         session.requestRecordPermission { [weak self] granted in
-            guard granted else { return }   // game still playable: touch-and-hold lifts
+            guard granted else {
+                // Game still playable: touch-and-hold becomes the lift.
+                DispatchQueue.main.async { self?.onActive?(false) }
+                return
+            }
             DispatchQueue.main.async { self?.installTap() }
         }
+        #endif
     }
 
     private func installTap() {
         let input = engine.inputNode
         let format = input.outputFormat(forBus: 0)
-        guard format.sampleRate > 0 else { return }
+        guard format.sampleRate > 0 else { onActive?(false); return }
         input.installTap(onBus: 0, bufferSize: 2048, format: format) { [weak self] buffer, _ in
             guard let self, let ch = buffer.floatChannelData?[0] else { return }
             let n = Int(buffer.frameLength)
@@ -72,7 +86,12 @@ final class BlowDetector {
             let level = self.smoothed
             DispatchQueue.main.async { self.onLevel?(level) }
         }
-        try? engine.start()
+        do {
+            try engine.start()
+            onActive?(true)
+        } catch {
+            onActive?(false)
+        }
     }
 
     func stop() {

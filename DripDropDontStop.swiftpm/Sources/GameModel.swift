@@ -15,6 +15,9 @@ final class GameModel: ObservableObject {
     @Published var phase: Phase = .water
     @Published var steamAllowed = false
     @Published var blowAllowed = true
+    /// True when the mic is live — breath owns lift and holds are inert.
+    /// False (denied / engine failure / simulator) — holds are the lift.
+    @Published var micActive = false
     /// False during the post-condense recharge (scene-driven). The cooldown
     /// is what keeps steam a committed leap instead of a second hover verb.
     @Published var steamReady = true
@@ -113,6 +116,7 @@ final class GameModel: ObservableObject {
         tiltSource.onTilt = { [weak self] v in self?.tilt = v }
         tiltSource.start()
         blow.onLevel = { [weak self] l in self?.blowLevel = l }
+        blow.onActive = { [weak self] active in self?.micActive = active }
         blow.start()
         UIApplication.shared.isIdleTimerDisabled = true
 

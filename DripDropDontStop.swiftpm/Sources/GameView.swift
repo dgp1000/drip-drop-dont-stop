@@ -88,7 +88,7 @@ struct GameView: View {
 
                     if model.blowAllowed {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("MIC")
+                        Text(model.micActive ? "MIC" : "HOLD")
                             .font(.system(size: 9, weight: .bold))
                             .tracking(1.5)
                             .foregroundStyle(.white.opacity(0.5))

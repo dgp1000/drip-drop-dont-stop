@@ -901,8 +901,11 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         let pointsPerMeter: CGFloat = 150
         // "Up" belongs to breath — except as vapor, which owns its own
         // rise, and on blow-gated levels, where breath does nothing.
+        // Touch-and-hold is strictly the mic's understudy: it lifts only
+        // when the mic isn't live (denied, failed, or simulator).
+        let hold: CGFloat = (holdingLift && !model.micActive) ? 0.9 : 0
         let lift = (model.phase == .steam || !model.blowAllowed) ? 0
-                 : max(holdingLift ? 0.9 : 0, CGFloat(model.blowLevel))
+                 : max(hold, CGFloat(model.blowLevel))
         currentLift = lift > 0.10 ? lift : 0
         if lift > 0.10 {
             // Proportional all the way down — no free weightlessness at the
