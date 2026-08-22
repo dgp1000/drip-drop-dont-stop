@@ -678,6 +678,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         model?.hint = level.hint
         inkBudget = level.inkBudget
         model?.carveAllowed = level.inkBudget > 0
+        model?.inkFrac = 1
         model?.steamAllowed = level.steamAllowed
         model?.blowAllowed = level.blowAllowed
         model?.phase = .water           // every level starts as water
@@ -1216,6 +1217,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         if seg >= 12, inkUsed + seg <= inkBudget {
             carvePoints.append(p)
             inkUsed += seg
+            model?.inkFrac = max(0, 1 - inkUsed / max(inkBudget, 1))
             let path = CGMutablePath()
             path.addLines(between: carvePoints)
             carvePreview?.path = path
@@ -1232,6 +1234,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         carveStart = nil
         carvePreview?.removeFromParent()
         carvePreview = nil
+        model?.inkFrac = 1      // ink is per-stroke: fresh pen on release
     }
 
     /// Flowing shimmer along the committed channel — a current running

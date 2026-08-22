@@ -27,6 +27,9 @@ final class GameModel: ObservableObject {
     @Published var blowLevel: Float = 0
     @Published var finished = false
     @Published var carveAllowed = false
+    /// Remaining ink for the stroke in progress, 1→0. Ink is per-stroke,
+    /// so this refills on release — the meter teaches that by itself.
+    @Published var inkFrac: CGFloat = 1
     @Published var totalScore = 0
     @Published var availableScore = 1000
     @Published var countdown: String?

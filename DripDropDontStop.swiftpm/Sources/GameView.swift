@@ -82,9 +82,23 @@ struct GameView: View {
                         .opacity(model.phase != .steam && !model.steamReady ? 0.4 : 1)
                     }
 
-                    Image(systemName: model.carveAllowed ? "pencil.tip" : "pencil.slash")
-                        .font(.callout)
-                        .foregroundStyle(model.carveAllowed ? Color.cyan : Color.white.opacity(0.3))
+                    if model.carveAllowed {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Label("INK", systemImage: "pencil.tip")
+                                .font(.system(size: 9, weight: .bold))
+                                .tracking(1.5)
+                                .foregroundStyle(.white.opacity(0.5))
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    Capsule().fill(.white.opacity(0.12))
+                                    Capsule().fill(Color(red: 0.6, green: 0.9, blue: 1.0))
+                                        .frame(width: geo.size.width * model.inkFrac)
+                                }
+                            }
+                            .frame(height: 6)
+                        }
+                        .frame(maxWidth: 74)
+                    }
 
                     if model.blowAllowed {
                     VStack(alignment: .leading, spacing: 3) {
