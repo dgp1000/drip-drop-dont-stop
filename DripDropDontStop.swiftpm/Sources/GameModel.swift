@@ -14,6 +14,9 @@ final class GameModel: ObservableObject {
     @Published var hint = ""
     @Published var phase: Phase = .water
     @Published var steamAllowed = false
+    /// False during the post-condense recharge (scene-driven). The cooldown
+    /// is what keeps steam a committed leap instead of a second hover verb.
+    @Published var steamReady = true
 
     /// Convenience for the freeze button and darkness proxy.
     var isIce: Bool { phase == .ice }
@@ -134,10 +137,15 @@ final class GameModel: ObservableObject {
         phase = (phase == .ice) ? .water : .ice
     }
 
-    /// Steam toggle; from ice this sublimates straight to vapor.
+    /// Steam toggle; from ice this sublimates straight to vapor. Condensing
+    /// is always allowed; vaporizing waits out the recharge.
     func toggleSteam() {
         autoFroze = false
-        phase = (phase == .steam) ? .water : .steam
+        if phase == .steam {
+            phase = .water
+        } else if steamReady {
+            phase = .steam
+        }
     }
 
     func resetLevel() { scene.reloadCurrent() }

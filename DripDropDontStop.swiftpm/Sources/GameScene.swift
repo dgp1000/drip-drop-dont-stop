@@ -331,10 +331,15 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     private let maxSpeed: CGFloat = 1400        // ice top speed / anti-tunneling cap
     private let waterMaxSpeed: CGFloat = 380    // water splatters beyond this — ice doesn't
     private let airSteer: CGFloat = 0.15        // tilt authority while airborne (ballistic air)
-    private let steamMaxSpeed: CGFloat = 250    // vapor floats, it doesn't fly
-    private let steamBuoyancy: CGFloat = 0.30   // upward pull as a fraction of gravityStrength
-    private let steamSteer: CGFloat = 0.35      // tilt authority as vapor (drifty)
-    private let steamDuration: TimeInterval = 3.5   // then it condenses back to water
+    // Steam vs blow, separated by feel (device playtest: they blurred
+    // together): blow is the hover jet — slow, precise, continuous,
+    // vulnerable; steam is the committed leap — fast, hazard-immune, on a
+    // short fuse, and with a recharge so tap-spam can't fake a hover.
+    private let steamMaxSpeed: CGFloat = 380    // a whoosh, not a float
+    private let steamBuoyancy: CGFloat = 0.50   // upward pull as a fraction of gravityStrength
+    private let steamSteer: CGFloat = 0.35      // tilt authority as vapor (the crossing verb)
+    private let steamDuration: TimeInterval = 2.8   // then it condenses back to water
+    private let steamCooldown: TimeInterval = 0.7   // recharge after condensing
 
     private var droplet: SKShapeNode!
     private var dropletVisual: DropletVisual?
@@ -349,6 +354,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     private var appliedPhase: Phase = .water
     private var steamElapsed: TimeInterval = 0
     private var steamFrac: CGFloat = 1          // remaining vapor time, 1→0
+    private var steamCooldownUntil: TimeInterval = 0
     /// Zones in scene coordinates, checked geometrically every frame.
     /// Sensor-style physics contacts (collision-less bodies) proved
     /// unreliable for a ball rolling along the scene edge, so the checks
@@ -472,8 +478,10 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         model?.carveAllowed = level.inkBudget > 0
         model?.steamAllowed = level.steamAllowed
         model?.phase = .water           // every level starts as water
+        model?.steamReady = true
         steamElapsed = 0
         steamFrac = 1
+        steamCooldownUntil = 0
         levelStartTime = CACurrentMediaTime()
         model?.availableScore = 1000
 
@@ -724,6 +732,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         }
 
         if model.phase != appliedPhase {
+            let wasSteam = appliedPhase == .steam
             applyPhase()
             freezeHaptic.impactOccurred()
             switch appliedPhase {
@@ -732,7 +741,13 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
             case .water: sfx("melt")    // melting and condensing share a bloop
             }
             if appliedPhase == .steam { steamElapsed = 0; steamFrac = 1 }
+            // Leaving vapor starts the recharge — steam is a committed
+            // leap, and the cooldown is what stops tap-spam becoming a
+            // second hover verb (that's blowing's job).
+            if wasSteam { steamCooldownUntil = CACurrentMediaTime() + steamCooldown }
         }
+        let steamReady = CACurrentMediaTime() >= steamCooldownUntil
+        if model.steamReady != steamReady { model.steamReady = steamReady }
 
         // During the countdown the world holds its breath: no gravity
         // steering, no lift, no zone checks, no score drain.

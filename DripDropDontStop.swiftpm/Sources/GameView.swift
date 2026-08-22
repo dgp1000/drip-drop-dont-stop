@@ -78,6 +78,8 @@ struct GameView: View {
                                                           : Color.white.opacity(0.18),
                                     in: Capsule())
                         }
+                        .disabled(model.phase != .steam && !model.steamReady)
+                        .opacity(model.phase != .steam && !model.steamReady ? 0.4 : 1)
                     }
 
                     Image(systemName: model.carveAllowed ? "pencil.tip" : "pencil.slash")

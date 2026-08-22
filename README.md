@@ -69,11 +69,17 @@ then `simctl io <sim> screenshot`. No effect on normal launches.
     then ride the lift and step off at the apex onto the goal ledge.
 
 **v1.1 adds STEAM** — a third phase (a button, like Freeze; tapping it from
-ice sublimates directly). Vapor rises on its own buoyancy, drifts with
+ice sublimates directly). Vapor rises fast on its own buoyancy, drifts with
 reduced tilt authority, ignores floor drains and grates, and auto-condenses
-back to water after 3.5 s. It cannot enter the basin (liquid only), blowing
-does nothing to it, and icicles condense it dead — which is what keeps the
-existing no-fly ceilings honest. Steam is per-level gated
+back to water after 2.8 s, followed by a 0.7 s recharge before the next
+vaporize (the button dims). It cannot enter the basin (liquid only),
+blowing does nothing to it, and icicles condense it dead — which is what
+keeps the existing no-fly ceilings honest.
+Device-playtest lesson: steam and blow originally blurred into the same
+"float up" feel. They're separated by rhythm now — blow is the hover jet
+(slow, precise, continuous, vulnerable), steam is the committed leap
+(fast, hazard-immune, short fuse, recharge). The cooldown is the load-
+bearing part: without it, tap-spam re-created a hover. Steam is per-level gated
 (`Level.steamAllowed`, same precedent as ink): levels 1–13 never offer it,
 so their tuning is untouched. Dying as steam respawns as water; dying as
 ice still keeps ice (Switchback relies on that).
