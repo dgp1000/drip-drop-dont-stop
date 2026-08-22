@@ -215,8 +215,17 @@ SECOND GOTCHA, same symptom: uniforms are only visible inside main() after
 translation — a helper function that references a uniform directly fails to
 compile; pass uniforms into helpers as arguments.
 Each level declares a `Mood` (abyss/frost/warm/storm/mist) that drives the
-backdrop gradient, caustic tint, and mote color — and is passed into the
-droplet shader as uniforms so its refraction bends the right backdrop.
+mote color and the droplet-refraction ambience (passed into the shader as
+uniforms) — and, since the diorama pass, selects the level's WORLD: every
+mood maps to a `DioramaTheme` (kitchen / freezer / boiler room / stormy
+rooftop / greenhouse), which supplies a fully-dressed procedural backdrop
+(faucet, fan grille, copper pipe + gauge, rain + lightning + skyline,
+glass panes + vines), themed slab textures (wood / frost-steel / iron /
+slate / moss-wood), and signature props. Hazard visuals are deliberately
+IDENTICAL across all themes — the danger language survives the set
+dressing, and no decoration may imitate a hazard (no fake icicles in the
+freezer). Kitchen-faucet rule: props spawn-aware (faucet only when the
+spawn hangs high enough).
 Steam gained vaporize/condense bursts and condensation drips that rain off
 the cloud as its clock runs out; carve channels are glassy (flowing stroke-
 shader shimmer + bright core) and crumble into droplets instead of

@@ -25,7 +25,9 @@ enum Mood {
     /// (top, mid, bottom) backdrop gradient as RGB triples.
     var gradient: (SIMD3<Float>, SIMD3<Float>, SIMD3<Float>) {
         switch self {
-        case .abyss: return (.init(0.11, 0.13, 0.26), .init(0.06, 0.08, 0.16), .init(0.02, 0.04, 0.08))
+        // Abyss ambience went warm-brown when its diorama became the night
+        // kitchen — the droplet's refraction must bend kitchen light.
+        case .abyss: return (.init(0.12, 0.09, 0.075), .init(0.07, 0.055, 0.045), .init(0.045, 0.035, 0.03))
         case .frost: return (.init(0.16, 0.20, 0.30), .init(0.10, 0.14, 0.22), .init(0.05, 0.08, 0.13))
         case .warm:  return (.init(0.22, 0.12, 0.10), .init(0.13, 0.07, 0.08), .init(0.06, 0.03, 0.05))
         case .storm: return (.init(0.16, 0.10, 0.26), .init(0.10, 0.06, 0.17), .init(0.04, 0.02, 0.09))
@@ -589,31 +591,9 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         }
         return SKTexture(image: img)
     }()
-    /// Diorama art-direction prototype (night kitchen on level 1),
-    /// launch-arg gated so the shipped look is untouched.
-    private static let dioramaDemo = ProcessInfo.processInfo.arguments.contains("-diorama")
-    private var inDiorama: Bool { Self.dioramaDemo && levelIndex == 0 }
-
-    private var bgTextureCache: [String: SKTexture] = [:]
-    private func bgTexture(for mood: Mood) -> SKTexture {
-        let key = "\(mood)"
-        if let cached = bgTextureCache[key] { return cached }
-        let (top, mid, bot) = mood.gradient
-        func color(_ v: SIMD3<Float>) -> CGColor {
-            UIColor(red: CGFloat(v.x), green: CGFloat(v.y), blue: CGFloat(v.z), alpha: 1).cgColor
-        }
-        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 64, height: 512))
-        let img = renderer.image { ctx in
-            let grad = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
-                                  colors: [color(top), color(mid), color(bot)] as CFArray,
-                                  locations: [0, 0.55, 1])!
-            ctx.cgContext.drawLinearGradient(grad, start: .zero,
-                                             end: CGPoint(x: 0, y: 512), options: [])
-        }
-        let tex = SKTexture(image: img)
-        bgTextureCache[key] = tex
-        return tex
-    }
+    // (The abstract gradient backdrop retired 22 Aug — every level is a
+    // diorama now, themed by mood via DioramaTheme. Mood gradients live on
+    // as the droplet-refraction ambience.)
 
     private func loadSounds() {
         for name in ["plink", "ice_tap", "freeze", "melt", "goal", "die", "tick", "go", "carve", "steam", "condense", "crumble"]
@@ -705,23 +685,14 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         levelStartTime = CACurrentMediaTime()
         model?.availableScore = 1000
 
-        if inDiorama {
-            addChild(Decor.kitchenBackdrop(size: size))
-            addChild(Decor.vignette(size: size))
-            for mote in Decor.motes(size: size,
-                                    color: UIColor(red: 0.9, green: 0.85, blue: 0.72, alpha: 1)) {
-                addChild(mote)     // dust in the moonbeam
-            }
-            addChild(Decor.faucet(aboveSpawn: point(level.spawn), sceneSize: size))
-        } else {
-            let bg = SKSpriteNode(texture: bgTexture(for: level.mood))
-            bg.size = size
-            bg.position = CGPoint(x: size.width / 2, y: size.height / 2)
-            bg.zPosition = -100
-            bg.shader = Decor.causticShader(tint: level.mood.causticTint)
-            addChild(bg)
-            addChild(Decor.vignette(size: size))
-            for mote in Decor.motes(size: size, color: level.mood.moteColor) { addChild(mote) }
+        let theme = DioramaTheme.theme(for: level.mood)
+        Decor.currentTheme = theme
+        addChild(Decor.dioramaBackdrop(theme: theme, size: size))
+        addChild(Decor.vignette(size: size))
+        for mote in Decor.motes(size: size, color: level.mood.moteColor) { addChild(mote) }
+        if let prop = Decor.signatureProp(theme: theme, spawn: point(level.spawn),
+                                          sceneSize: size) {
+            addChild(prop)
         }
 
         // removeAllChildren() took the camera with it; small shakes only.
@@ -791,7 +762,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     func reloadCurrent() { loadLevel(levelIndex) }
 
     private func addWall(_ r: CGRect) {
-        let node = inDiorama ? Decor.woodSlab(rect: r) : Decor.slab(rect: r)
+        let node = Decor.slab(rect: r)
         let body = SKPhysicsBody(rectangleOf: r.size)
         body.isDynamic = false
         body.categoryBitMask = Cat.wall
