@@ -39,6 +39,7 @@ struct SimTiltKeys: ViewModifier {
         }
     }
 
+    @available(iOS 17.0, *)
     private func keyName(_ key: KeyEquivalent) -> String? {
         switch key {
         case .leftArrow: return "left"
