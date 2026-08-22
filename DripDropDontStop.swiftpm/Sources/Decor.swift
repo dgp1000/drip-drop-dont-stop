@@ -413,6 +413,170 @@ enum Decor {
                 layer(rate: 0.8, life: 10, scale: 0.28, alpha: 0.14, speed: 12)]
     }
 
+    // MARK: - Diorama demo (night kitchen) — behind the -diorama flag
+
+    /// A moody night-kitchen wall: warm darkness, a moonlit window with a
+    /// light shaft, backsplash tiles, a counter horizon. All procedural.
+    static func kitchenBackdrop(size: CGSize) -> SKNode {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let img = renderer.image { ctx in
+            let c = ctx.cgContext
+            let grad = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                                  colors: [UIColor(red: 0.12, green: 0.09, blue: 0.075, alpha: 1).cgColor,
+                                           UIColor(red: 0.07, green: 0.055, blue: 0.045, alpha: 1).cgColor,
+                                           UIColor(red: 0.045, green: 0.035, blue: 0.03, alpha: 1).cgColor] as CFArray,
+                                  locations: [0, 0.5, 1])!
+            c.drawLinearGradient(grad, start: .zero,
+                                 end: CGPoint(x: 0, y: size.height), options: [])
+
+            // Moonlit window, upper right (renderer y runs downward).
+            let win = CGRect(x: size.width * 0.56, y: size.height * 0.08,
+                             width: size.width * 0.34, height: size.height * 0.24)
+            let winPath = UIBezierPath(roundedRect: win, cornerRadius: 6)
+            UIColor(red: 0.75, green: 0.85, blue: 1.0, alpha: 0.10).setFill()
+            winPath.fill()
+            UIColor(red: 0.8, green: 0.88, blue: 1.0, alpha: 0.22).setStroke()
+            winPath.lineWidth = 2
+            winPath.stroke()
+            // Panes.
+            c.setStrokeColor(UIColor(red: 0.05, green: 0.05, blue: 0.06, alpha: 0.8).cgColor)
+            c.setLineWidth(3)
+            c.move(to: CGPoint(x: win.midX, y: win.minY)); c.addLine(to: CGPoint(x: win.midX, y: win.maxY))
+            c.move(to: CGPoint(x: win.minX, y: win.midY)); c.addLine(to: CGPoint(x: win.maxX, y: win.midY))
+            c.strokePath()
+            // Light shaft falling left toward the floor.
+            c.saveGState()
+            c.beginPath()
+            c.move(to: CGPoint(x: win.minX, y: win.maxY))
+            c.addLine(to: CGPoint(x: win.maxX, y: win.maxY))
+            c.addLine(to: CGPoint(x: size.width * 0.42, y: size.height))
+            c.addLine(to: CGPoint(x: size.width * 0.08, y: size.height))
+            c.closePath()
+            c.setFillColor(UIColor(red: 0.75, green: 0.85, blue: 1.0, alpha: 0.045).cgColor)
+            c.fillPath()
+            c.restoreGState()
+
+            // Backsplash tiles on the lower wall.
+            c.setStrokeColor(UIColor.white.withAlphaComponent(0.05).cgColor)
+            c.setLineWidth(1)
+            let tileTop = size.height * 0.62
+            var y = tileTop
+            var row = 0
+            while y < size.height {
+                c.move(to: CGPoint(x: 0, y: y)); c.addLine(to: CGPoint(x: size.width, y: y))
+                var x = (row % 2 == 0) ? 0 : size.width * 0.075
+                while x < size.width {
+                    c.move(to: CGPoint(x: x, y: y))
+                    c.addLine(to: CGPoint(x: x, y: min(y + size.height * 0.055, size.height)))
+                    x += size.width * 0.15
+                }
+                y += size.height * 0.055
+                row += 1
+            }
+            // Counter horizon.
+            c.setStrokeColor(UIColor(red: 0.55, green: 0.42, blue: 0.28, alpha: 0.35).cgColor)
+            c.setLineWidth(2.5)
+            c.move(to: CGPoint(x: 0, y: tileTop)); c.addLine(to: CGPoint(x: size.width, y: tileTop))
+            c.strokePath()
+        }
+        let sprite = SKSpriteNode(texture: SKTexture(image: img))
+        sprite.size = size
+        sprite.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        sprite.zPosition = -100
+        return sprite
+    }
+
+    /// Warm wood for counters/shelves: grain streaks and a lit top edge.
+    static func woodTexture(size: CGSize) -> SKTexture {
+        let sz = CGSize(width: max(size.width, 6), height: max(size.height, 6))
+        let renderer = UIGraphicsImageRenderer(size: sz)
+        let img = renderer.image { ctx in
+            let c = ctx.cgContext
+            let r = CGRect(origin: .zero, size: sz).insetBy(dx: 0.5, dy: 0.5)
+            let path = UIBezierPath(roundedRect: r, cornerRadius: min(4, min(r.width, r.height) / 2))
+            c.addPath(path.cgPath)
+            c.clip()
+            let grad = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                                  colors: [UIColor(red: 0.36, green: 0.25, blue: 0.15, alpha: 1).cgColor,
+                                           UIColor(red: 0.24, green: 0.155, blue: 0.095, alpha: 1).cgColor] as CFArray,
+                                  locations: [0, 1])!
+            c.drawLinearGradient(grad, start: .zero, end: CGPoint(x: 0, y: sz.height), options: [])
+            // Grain: wavy darker streaks.
+            c.setStrokeColor(UIColor(red: 0.14, green: 0.09, blue: 0.05, alpha: 0.35).cgColor)
+            c.setLineWidth(1.2)
+            let streaks = max(2, Int(sz.height / 7))
+            for i in 0..<streaks {
+                let gy = sz.height * (CGFloat(i) + 0.6) / CGFloat(streaks)
+                c.move(to: CGPoint(x: 0, y: gy))
+                var x: CGFloat = 0
+                while x < sz.width {
+                    x += 14
+                    let wobble = sin((x / 23) + CGFloat(i) * 1.7) * 1.3
+                    c.addLine(to: CGPoint(x: x, y: gy + wobble))
+                }
+            }
+            c.strokePath()
+            // Lit top edge (moonlight catches the counter).
+            UIColor(red: 0.85, green: 0.75, blue: 0.55, alpha: 0.35).setFill()
+            c.fill(CGRect(x: 1.5, y: 0.5, width: sz.width - 3, height: 1.5))
+        }
+        return SKTexture(image: img)
+    }
+
+    /// A wooden slab (same shadow treatment as the slate one).
+    static func woodSlab(rect: CGRect) -> SKNode {
+        let node = SKNode()
+        node.position = CGPoint(x: rect.midX, y: rect.midY)
+        let sh = SKSpriteNode(texture: shadow)
+        sh.centerRect = CGRect(x: 0.4, y: 0.4, width: 0.2, height: 0.2)
+        sh.size = CGSize(width: rect.width + 18, height: rect.height + 18)
+        sh.position = CGPoint(x: 2, y: -5)
+        sh.alpha = 0.6
+        sh.zPosition = -1
+        node.addChild(sh)
+        let slab = SKSpriteNode(texture: woodTexture(size: rect.size))
+        slab.size = rect.size
+        node.addChild(slab)
+        return node
+    }
+
+    /// The storyteller: a steel faucet whose spout sits above the spawn —
+    /// the droplet is the drip.
+    static func faucet(aboveSpawn spawn: CGPoint, sceneSize: CGSize) -> SKNode {
+        let node = SKNode()
+        let riserX = spawn.x - 64
+        let armY = min(spawn.y + 46, sceneSize.height - 30)
+        let path = CGMutablePath()
+        path.move(to: CGPoint(x: riserX, y: sceneSize.height + 8))
+        path.addLine(to: CGPoint(x: riserX, y: armY))
+        path.addArc(tangent1End: CGPoint(x: riserX, y: armY - 16),
+                    tangent2End: CGPoint(x: riserX + 16, y: armY - 16), radius: 14)
+        path.addLine(to: CGPoint(x: spawn.x, y: armY - 16))
+        path.addArc(tangent1End: CGPoint(x: spawn.x + 12, y: armY - 16),
+                    tangent2End: CGPoint(x: spawn.x + 12, y: armY - 30), radius: 10)
+        path.addLine(to: CGPoint(x: spawn.x + 12, y: armY - 34))
+        let pipe = SKShapeNode(path: path)
+        pipe.strokeColor = UIColor(red: 0.42, green: 0.44, blue: 0.48, alpha: 1)
+        pipe.lineWidth = 11
+        pipe.lineCap = .round
+        node.addChild(pipe)
+        let sheen = SKShapeNode(path: path)
+        sheen.strokeColor = UIColor(red: 0.75, green: 0.80, blue: 0.88, alpha: 0.45)
+        sheen.lineWidth = 3
+        sheen.lineCap = .round
+        sheen.position = CGPoint(x: -2, y: 2)
+        node.addChild(sheen)
+        // Nozzle.
+        let tip = SKShapeNode(rectOf: CGSize(width: 18, height: 8), cornerRadius: 3)
+        tip.fillColor = UIColor(red: 0.35, green: 0.37, blue: 0.41, alpha: 1)
+        tip.strokeColor = UIColor(red: 0.7, green: 0.74, blue: 0.8, alpha: 0.5)
+        tip.lineWidth = 1
+        tip.position = CGPoint(x: spawn.x + 12, y: armY - 36)
+        node.addChild(tip)
+        node.zPosition = -50
+        return node
+    }
+
     /// Pulsing ring marking the spawn point during the countdown.
     static func spawnRing(at p: CGPoint) -> SKNode {
         let node = SKNode()

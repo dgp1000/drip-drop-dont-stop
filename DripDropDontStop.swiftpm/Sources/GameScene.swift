@@ -589,6 +589,11 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         }
         return SKTexture(image: img)
     }()
+    /// Diorama art-direction prototype (night kitchen on level 1),
+    /// launch-arg gated so the shipped look is untouched.
+    private static let dioramaDemo = ProcessInfo.processInfo.arguments.contains("-diorama")
+    private var inDiorama: Bool { Self.dioramaDemo && levelIndex == 0 }
+
     private var bgTextureCache: [String: SKTexture] = [:]
     private func bgTexture(for mood: Mood) -> SKTexture {
         let key = "\(mood)"
@@ -700,14 +705,24 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         levelStartTime = CACurrentMediaTime()
         model?.availableScore = 1000
 
-        let bg = SKSpriteNode(texture: bgTexture(for: level.mood))
-        bg.size = size
-        bg.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        bg.zPosition = -100
-        bg.shader = Decor.causticShader(tint: level.mood.causticTint)
-        addChild(bg)
-        addChild(Decor.vignette(size: size))
-        for mote in Decor.motes(size: size, color: level.mood.moteColor) { addChild(mote) }
+        if inDiorama {
+            addChild(Decor.kitchenBackdrop(size: size))
+            addChild(Decor.vignette(size: size))
+            for mote in Decor.motes(size: size,
+                                    color: UIColor(red: 0.9, green: 0.85, blue: 0.72, alpha: 1)) {
+                addChild(mote)     // dust in the moonbeam
+            }
+            addChild(Decor.faucet(aboveSpawn: point(level.spawn), sceneSize: size))
+        } else {
+            let bg = SKSpriteNode(texture: bgTexture(for: level.mood))
+            bg.size = size
+            bg.position = CGPoint(x: size.width / 2, y: size.height / 2)
+            bg.zPosition = -100
+            bg.shader = Decor.causticShader(tint: level.mood.causticTint)
+            addChild(bg)
+            addChild(Decor.vignette(size: size))
+            for mote in Decor.motes(size: size, color: level.mood.moteColor) { addChild(mote) }
+        }
 
         // removeAllChildren() took the camera with it; small shakes only.
         let camera = SKCameraNode()
@@ -776,7 +791,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     func reloadCurrent() { loadLevel(levelIndex) }
 
     private func addWall(_ r: CGRect) {
-        let node = Decor.slab(rect: r)
+        let node = inDiorama ? Decor.woodSlab(rect: r) : Decor.slab(rect: r)
         let body = SKPhysicsBody(rectangleOf: r.size)
         body.isDynamic = false
         body.categoryBitMask = Cat.wall
