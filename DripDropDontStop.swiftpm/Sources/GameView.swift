@@ -137,6 +137,9 @@ struct GameView: View {
             if model.finished { finishOverlay }
         }
         .animation(.spring(duration: 0.3), value: model.countdown)
+        #if targetEnvironment(simulator)
+        .modifier(SimTiltKeys(model: model))
+        #endif
     }
 
     private var finishOverlay: some View {
