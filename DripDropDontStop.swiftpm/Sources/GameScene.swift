@@ -12,6 +12,48 @@ import UIKit
 
 enum ZoneKind { case drain, grate, goal }
 
+/// Per-level ambience: backdrop gradient, caustic tint, mote color.
+/// The droplet's refraction shader receives the same palette so its
+/// transparency stays truthful in every mood.
+enum Mood {
+    case abyss      // deep blue — the default diorama
+    case frost      // pale, freezing (the ice-lesson levels)
+    case warm       // amber boiler-light (the breath/heat levels)
+    case storm      // violet dusk (the capstones)
+    case mist       // grey-green vapor (the steam intro)
+
+    /// (top, mid, bottom) backdrop gradient as RGB triples.
+    var gradient: (SIMD3<Float>, SIMD3<Float>, SIMD3<Float>) {
+        switch self {
+        case .abyss: return (.init(0.11, 0.13, 0.26), .init(0.06, 0.08, 0.16), .init(0.02, 0.04, 0.08))
+        case .frost: return (.init(0.16, 0.20, 0.30), .init(0.10, 0.14, 0.22), .init(0.05, 0.08, 0.13))
+        case .warm:  return (.init(0.22, 0.12, 0.10), .init(0.13, 0.07, 0.08), .init(0.06, 0.03, 0.05))
+        case .storm: return (.init(0.16, 0.10, 0.26), .init(0.10, 0.06, 0.17), .init(0.04, 0.02, 0.09))
+        case .mist:  return (.init(0.14, 0.18, 0.20), .init(0.09, 0.12, 0.14), .init(0.04, 0.06, 0.07))
+        }
+    }
+
+    var causticTint: SIMD3<Float> {
+        switch self {
+        case .abyss: return .init(0.30, 0.55, 0.90)
+        case .frost: return .init(0.55, 0.75, 0.95)
+        case .warm:  return .init(0.95, 0.55, 0.25)
+        case .storm: return .init(0.60, 0.45, 0.95)
+        case .mist:  return .init(0.55, 0.80, 0.75)
+        }
+    }
+
+    var moteColor: UIColor {
+        switch self {
+        case .abyss: return UIColor(red: 0.55, green: 0.75, blue: 1.00, alpha: 1)
+        case .frost: return UIColor(red: 0.80, green: 0.90, blue: 1.00, alpha: 1)
+        case .warm:  return UIColor(red: 1.00, green: 0.75, blue: 0.50, alpha: 1)
+        case .storm: return UIColor(red: 0.75, green: 0.65, blue: 1.00, alpha: 1)
+        case .mist:  return UIColor(red: 0.75, green: 0.90, blue: 0.85, alpha: 1)
+        }
+    }
+}
+
 struct Zone {
     let rect: CGRect
     let kind: ZoneKind
@@ -56,6 +98,8 @@ struct Level {
     /// in every phase, making it the universal skeleton key — late levels
     /// disable it so their intended route is the only route.
     var blowAllowed = true
+    /// Ambience palette for this diorama.
+    var mood: Mood = .abyss
 }
 
 enum Levels {
@@ -81,7 +125,8 @@ enum Levels {
               zones: [
                   Zone(rect: CGRect(x: 0.76, y: 0.015, width: 0.20, height: 0.05), kind: .goal),
               ],
-              par: 12),
+              par: 12,
+              mood: .warm),
         Level(name: "Cold Crossing",
               hint: "Tap FREEZE to turn to ice — ice slides over the blue grates that swallow water.",
               spawn: CGPoint(x: 0.90, y: 0.72),
@@ -92,7 +137,8 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.28, y: 0.00, width: 0.44, height: 0.035), kind: .grate),
                   Zone(rect: CGRect(x: 0.80, y: 0.015, width: 0.16, height: 0.05), kind: .goal),
               ],
-              par: 14),
+              par: 14,
+              mood: .frost),
         Level(name: "Leap of Frost",
               hint: "FREEZE at the top, then ride the ramp — only fast ice makes the jump. Water is too slow.",
               spawn: CGPoint(x: 0.08, y: 0.88),
@@ -108,7 +154,8 @@ enum Levels {
                        size: CGSize(width: 0.40, height: 0.028),
                        rotation: -0.28),
               ],
-              par: 16),
+              par: 16,
+              mood: .frost),
         Level(name: "Aqueduct",
               hint: "DRAW on the screen with your finger to create a path to the basin. Drawn paths fade.",
               spawn: CGPoint(x: 0.15, y: 0.90),
@@ -131,7 +178,8 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.01, y: 0.39, width: 0.11, height: 0.05), kind: .goal),
               ],
               inkBudget: 300,
-              par: 20),
+              par: 20,
+              mood: .frost),
         Level(name: "The Chimney",
               hint: "BLOW in short breaths to climb. Rest on the shelves — but land clear of the slatted patches.",
               spawn: CGPoint(x: 0.80, y: 0.08),
@@ -146,7 +194,8 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.45, y: 0.55, width: 0.25, height: 0.02), kind: .grate),
                   Zone(rect: CGRect(x: 0.05, y: 0.775, width: 0.14, height: 0.05), kind: .goal),
               ],
-              par: 32),
+              par: 32,
+              mood: .warm),
         Level(name: "Boost Slide",
               hint: "FREEZE, tilt to skate, and BLOW quick puffs to hop the bump and the pit. Stay LOW — icicles above.",
               spawn: CGPoint(x: 0.07, y: 0.10),
@@ -159,7 +208,8 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.15, y: 0.00, width: 0.85, height: 0.035), kind: .grate),
                   Zone(rect: CGRect(x: 0.88, y: 0.015, width: 0.11, height: 0.05), kind: .goal),
               ],
-              par: 20),
+              par: 20,
+              mood: .storm),
         Level(name: "Switchback",
               hint: "FREEZE early — grates on every storey. Work right, drop, work LEFT over the pit, then skate home.",
               spawn: CGPoint(x: 0.06, y: 0.90),
@@ -185,7 +235,8 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.76, y: 0.015, width: 0.12, height: 0.05), kind: .goal),
                   Zone(rect: CGRect(x: 0.90, y: 0.00, width: 0.10, height: 0.035), kind: .drain),
               ],
-              par: 18),
+              par: 18,
+              mood: .warm),
         // One way only: no blowing, all-grate floor. Freeze mid-fall, board
         // the (narrow, fast) lift when it's low, ride up, roll off right.
         Level(name: "Rising Water",
@@ -229,7 +280,8 @@ enum Levels {
                         size: CGSize(width: 0.20, height: 0.03),
                         travel: CGVector(dx: 0, dy: 0.135), period: 4.5),
               ],
-              par: 26),
+              par: 26,
+              mood: .frost),
         // One way only: the goal ledge is capped (ceiling + side wall), so
         // the sole entry is the hop from the lift's apex. Ink is cut to a
         // catch-slide's worth — it can no longer carve a road to the goal.
@@ -254,7 +306,8 @@ enum Levels {
                         travel: CGVector(dx: 0, dy: 0.29), period: 5),
               ],
               inkBudget: 160,
-              par: 34),
+              par: 34,
+              mood: .storm),
         // MARK: v1.1 — the steam levels. STEAM rises as vapor, drifts with
         // reduced tilt authority, ignores floor drains and grates, dies to
         // icicles, can't enter the basin, and condenses back to water after
@@ -275,7 +328,8 @@ enum Levels {
               ],
               par: 12,
               steamAllowed: true,
-              blowAllowed: false),
+              blowAllowed: false,
+              mood: .mist),
         // One way only: smaller stones, and an icicle sky caps the hops —
         // vaporize, condense EARLY, fall onto the next stone, recharge.
         Level(name: "Stepping Stones",
@@ -293,7 +347,8 @@ enum Levels {
               ],
               par: 20,
               steamAllowed: true,
-              blowAllowed: false),
+              blowAllowed: false,
+              mood: .storm),
         // One way only: two icicle fronts with offset gaps and a single
         // perch. Burst up the left gap, drift right, condense on the perch,
         // recharge, then burst up the right gap onto the top-right ledge.
@@ -311,7 +366,8 @@ enum Levels {
               ],
               par: 20,
               steamAllowed: true,
-              blowAllowed: false),
+              blowAllowed: false,
+              mood: .frost),
         // One way only: a full ceiling at 0.60 — solid slab on the left,
         // icicles on the right — with the ledge below it. Early vapor gets
         // pinned under the slab, drifts into the icicle seam, and dies; the
@@ -331,7 +387,8 @@ enum Levels {
               ],
               par: 24,
               steamAllowed: true,
-              blowAllowed: false),
+              blowAllowed: false,
+              mood: .warm),
         // One way only (the capstone): a mid icicle band forbids the direct
         // steam crossing, so the route is CARVE a low slide under it, ride
         // right as water, then vaporize up the narrow corridor between the
@@ -352,7 +409,8 @@ enum Levels {
               inkBudget: 220,
               par: 34,
               steamAllowed: true,
-              blowAllowed: false),
+              blowAllowed: false,
+              mood: .storm),
     ]
 }
 
@@ -428,19 +486,26 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         }
         return SKTexture(image: img)
     }()
-    private lazy var bgTexture: SKTexture = {
+    private var bgTextureCache: [String: SKTexture] = [:]
+    private func bgTexture(for mood: Mood) -> SKTexture {
+        let key = "\(mood)"
+        if let cached = bgTextureCache[key] { return cached }
+        let (top, mid, bot) = mood.gradient
+        func color(_ v: SIMD3<Float>) -> CGColor {
+            UIColor(red: CGFloat(v.x), green: CGFloat(v.y), blue: CGFloat(v.z), alpha: 1).cgColor
+        }
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: 64, height: 512))
         let img = renderer.image { ctx in
-            let colors = [UIColor(red: 0.11, green: 0.13, blue: 0.26, alpha: 1).cgColor,
-                          UIColor(red: 0.06, green: 0.08, blue: 0.16, alpha: 1).cgColor,
-                          UIColor(red: 0.02, green: 0.04, blue: 0.08, alpha: 1).cgColor]
             let grad = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
-                                  colors: colors as CFArray, locations: [0, 0.55, 1])!
+                                  colors: [color(top), color(mid), color(bot)] as CFArray,
+                                  locations: [0, 0.55, 1])!
             ctx.cgContext.drawLinearGradient(grad, start: .zero,
                                              end: CGPoint(x: 0, y: 512), options: [])
         }
-        return SKTexture(image: img)
-    }()
+        let tex = SKTexture(image: img)
+        bgTextureCache[key] = tex
+        return tex
+    }
 
     private func loadSounds() {
         for name in ["plink", "ice_tap", "freeze", "melt", "goal", "die", "tick", "go", "carve", "steam"]
@@ -531,14 +596,14 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         levelStartTime = CACurrentMediaTime()
         model?.availableScore = 1000
 
-        let bg = SKSpriteNode(texture: bgTexture)
+        let bg = SKSpriteNode(texture: bgTexture(for: level.mood))
         bg.size = size
         bg.position = CGPoint(x: size.width / 2, y: size.height / 2)
         bg.zPosition = -100
-        bg.shader = Decor.causticShader
+        bg.shader = Decor.causticShader(tint: level.mood.causticTint)
         addChild(bg)
         addChild(Decor.vignette(size: size))
-        for mote in Decor.motes(size: size) { addChild(mote) }
+        for mote in Decor.motes(size: size, color: level.mood.moteColor) { addChild(mote) }
 
         // removeAllChildren() took the camera with it; small shakes only.
         let camera = SKCameraNode()
@@ -712,7 +777,8 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
 
         addChild(droplet)
 
-        let visual = DropletVisual(sceneHeight: size.height)
+        let visual = DropletVisual(sceneHeight: size.height,
+                                   mood: Levels.all[levelIndex].mood)
         visual.position = p
         addChild(visual)
         dropletVisual = visual
@@ -782,9 +848,21 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
             applyPhase()
             freezeHaptic.impactOccurred()
             switch appliedPhase {
-            case .ice:   sfx("freeze")
-            case .steam: sfx("steam")
-            case .water: sfx("melt")    // melting and condensing share a bloop
+            case .ice:
+                sfx("freeze")
+            case .steam:
+                sfx("steam")
+                // The body flashes apart into vapor.
+                burst(at: droplet.position,
+                      color: UIColor(white: 0.95, alpha: 0.9), up: true, count: 12)
+            case .water:
+                sfx("melt")    // melting and condensing share a bloop
+                if wasSteam {
+                    // Condensation: the cloud collapses into a shower.
+                    burst(at: droplet.position,
+                          color: UIColor(red: 0.45, green: 0.72, blue: 1, alpha: 1),
+                          up: false, count: 10)
+                }
             }
             if appliedPhase == .steam { steamElapsed = 0; steamFrac = 1 }
             // Leaving vapor starts the recharge — steam is a committed
@@ -1058,14 +1136,31 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         carvePreview = nil
     }
 
+    /// Flowing shimmer along the committed channel — a current running
+    /// through glass. v_path_distance is SpriteKit's stroke-shader gift.
+    private static let channelShader = SKShader(source: """
+        void main() {
+            float flow = 0.72 + 0.28 * sin(v_path_distance * 0.13 - u_time * 9.0);
+            vec3 col = vec3(0.55, 0.88, 1.0) * flow + vec3(0.25) * pow(flow, 6.0);
+            gl_FragColor = vec4(col * 0.9, 0.9);
+        }
+        """)
+
     private func commitChannel(points: [CGPoint]) {
         let path = CGMutablePath()
         path.addLines(between: points)
         let node = SKShapeNode(path: path)
         node.strokeColor = UIColor(red: 0.6, green: 0.9, blue: 1.0, alpha: 0.9)
-        node.lineWidth = 5
+        node.lineWidth = 6
         node.lineCap = .round
         node.glowWidth = 2
+        node.strokeShader = Self.channelShader
+        // Bright core line: the channel reads as a glass canal, not a mark.
+        let core = SKShapeNode(path: path)
+        core.strokeColor = UIColor.white.withAlphaComponent(0.85)
+        core.lineWidth = 1.6
+        core.lineCap = .round
+        node.addChild(core)
         let body = SKPhysicsBody(edgeChainFrom: path)
         body.isDynamic = false
         body.categoryBitMask = Cat.wall
@@ -1076,11 +1171,19 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         if channels.count > maxChannels {
             channels.removeFirst().run(.sequence([.fadeOut(withDuration: 0.25), .removeFromParent()]))
         }
+        // Evaporation: instead of blinking, the channel crumbles into
+        // droplets along its length as it fades out.
         node.run(.sequence([
-            .wait(forDuration: channelLifetime - 1.2),
-            .repeat(.sequence([.fadeAlpha(to: 0.25, duration: 0.15),
-                               .fadeAlpha(to: 0.9, duration: 0.15)]), count: 3),
-            .fadeOut(withDuration: 0.3),
+            .wait(forDuration: channelLifetime - 0.5),
+            .run { [weak self, weak node] in
+                guard let self, let node else { return }
+                for (i, p) in points.enumerated() where i % 3 == 0 {
+                    self.burst(at: node.convert(p, to: self),
+                               color: UIColor(red: 0.55, green: 0.85, blue: 1, alpha: 1),
+                               up: false, count: 3)
+                }
+            },
+            .fadeOut(withDuration: 0.45),
             .removeFromParent(),
         ]))
         carveHaptic.impactOccurred()

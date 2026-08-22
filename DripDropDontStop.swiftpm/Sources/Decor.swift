@@ -307,8 +307,13 @@ enum Decor {
 
     // MARK: - Backdrop
 
-    /// Faint moving water-caustic shimmer over the gradient backdrop.
-    static let causticShader = SKShader(source: """
+    /// Faint moving water-caustic shimmer over the gradient backdrop,
+    /// tinted per mood. Cached per tint (shaders are per-level singletons).
+    private static var causticCache: [String: SKShader] = [:]
+    static func causticShader(tint: SIMD3<Float>) -> SKShader {
+        let key = "\(tint.x),\(tint.y),\(tint.z)"
+        if let cached = causticCache[key] { return cached }
+        let shader = SKShader(source: """
         void main() {
             vec4 base = texture2D(u_texture, v_tex_coord);
             vec2 p = v_tex_coord * vec2(6.0, 10.0);
@@ -316,9 +321,12 @@ enum Decor {
                     + sin(p.y * 1.3 - u_time * 0.32)
                     + sin((p.x + p.y) * 1.1 + u_time * 0.21);
             float glow = smoothstep(1.1, 3.0, c) * 0.05;
-            gl_FragColor = vec4(base.rgb + vec3(0.30, 0.55, 0.9) * glow, 1.0);
+            gl_FragColor = vec4(base.rgb + vec3(\(tint.x), \(tint.y), \(tint.z)) * glow, 1.0);
         }
         """)
+        causticCache[key] = shader
+        return shader
+    }
 
     static func vignette(size: CGSize) -> SKNode {
         let dim: CGFloat = 256
@@ -343,7 +351,8 @@ enum Decor {
     }
 
     /// Two layers of ambient drift: big soft motes and rare bright specks.
-    static func motes(size: CGSize) -> [SKEmitterNode] {
+    static func motes(size: CGSize,
+                      color: UIColor = UIColor(red: 0.55, green: 0.75, blue: 1.0, alpha: 1)) -> [SKEmitterNode] {
         func layer(rate: CGFloat, life: CGFloat, scale: CGFloat,
                    alpha: CGFloat, speed: CGFloat) -> SKEmitterNode {
             let e = SKEmitterNode()
@@ -360,7 +369,7 @@ enum Decor {
             e.particleAlphaRange = alpha * 0.5
             e.particleScale = scale
             e.particleScaleRange = scale * 0.5
-            e.particleColor = UIColor(red: 0.55, green: 0.75, blue: 1.0, alpha: 1)
+            e.particleColor = color
             e.particleColorBlendFactor = 1
             e.zPosition = -80
             e.advanceSimulationTime(Double(life))

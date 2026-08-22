@@ -191,6 +191,17 @@ bright rim + small hard glint, nothing more.
 GOTCHA: SpriteKit's GLSL→Metal translation cannot handle a bare `return`
 after writing gl_FragColor (it emits a double return and the shader dies at
 runtime, rendering an opaque white quad) — no early-outs in SKShader source.
+SECOND GOTCHA, same symptom: uniforms are only visible inside main() after
+translation — a helper function that references a uniform directly fails to
+compile; pass uniforms into helpers as arguments.
+Each level declares a `Mood` (abyss/frost/warm/storm/mist) that drives the
+backdrop gradient, caustic tint, and mote color — and is passed into the
+droplet shader as uniforms so its refraction bends the right backdrop.
+Steam gained vaporize/condense bursts and condensation drips that rain off
+the cloud as its clock runs out; carve channels are glassy (flowing stroke-
+shader shimmer + bright core) and crumble into droplets instead of
+blinking; the menu has a breathing hero, per-level verb icons, and tiny
+Canvas thumbnails drawn straight from the level data.
 Environment art lives in `Decor.swift`: glassy slate slabs with shadows
 (movers get a pulsing cyan running light), a glowing goal pool with ripples
 and rising bubbles, floor drains as ember-lit pits, elevated drains as

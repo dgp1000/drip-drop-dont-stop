@@ -19,6 +19,7 @@
 // dies at runtime and renders an opaque white quad. No early-outs.
 
 import SpriteKit
+import UIKit
 import simd
 
 final class DropletVisual: SKNode {
@@ -30,6 +31,9 @@ final class DropletVisual: SKNode {
 
     private let sprite: SKSpriteNode
     private let contactShadow: SKSpriteNode
+    /// Condensation warning: droplets rain off the cloud as the vapor
+    /// clock runs out — the player's cue that the pop is coming.
+    private let drips: SKEmitterNode
     private let uP: [SKUniform]
     private let uR: [SKUniform]
     private let uStretch = SKUniform(name: "u_stretch", vectorFloat2: vector_float2(0, 0))
@@ -48,7 +52,7 @@ final class DropletVisual: SKNode {
     private var steamMix: CGFloat = 0
     private var groundMix: CGFloat = 0
 
-    init(sceneHeight: CGFloat) {
+    init(sceneHeight: CGFloat, mood: Mood = .abyss) {
         var ps: [SKUniform] = []
         var rs: [SKUniform] = []
         for i in 0..<Self.trailCount {
@@ -60,10 +64,35 @@ final class DropletVisual: SKNode {
         uSceneH = SKUniform(name: "u_sceneH", float: Float(max(sceneHeight, 1)))
         sprite = SKSpriteNode(color: .white, size: CGSize(width: Self.quad, height: Self.quad))
         contactShadow = SKSpriteNode(texture: Decor.shadow)
+        drips = SKEmitterNode()
         super.init()
 
+        drips.particleTexture = Decor.softDot
+        drips.particleBirthRate = 0
+        drips.particleLifetime = 0.6
+        drips.particleSpeed = 12
+        drips.particleSpeedRange = 10
+        drips.emissionAngle = -.pi / 2
+        drips.emissionAngleRange = 0.7
+        drips.yAcceleration = -650
+        drips.particlePositionRange = CGVector(dx: 26, dy: 8)
+        drips.particleAlpha = 0.65
+        drips.particleAlphaSpeed = -0.9
+        drips.particleScale = 0.22
+        drips.particleScaleRange = 0.10
+        drips.particleColor = UIColor(red: 0.55, green: 0.78, blue: 1.0, alpha: 1)
+        drips.particleColorBlendFactor = 1
+        drips.zPosition = -0.5
+        addChild(drips)
+
+        // The refraction must bend THIS level's backdrop, not a hardcoded
+        // one — the mood palette rides in as uniforms.
+        let (top, mid, bot) = mood.gradient
         let shader = SKShader(source: Self.source)
         shader.uniforms = [SKUniform(name: "u_r0", float: Self.mainRadiusUV),
+                           SKUniform(name: "u_bgTop", vectorFloat3: top),
+                           SKUniform(name: "u_bgMid", vectorFloat3: mid),
+                           SKUniform(name: "u_bgBot", vectorFloat3: bot),
                            uStretch, uWob, uIce, uSteam, uRem, uLift, uGround,
                            uWorldY, uSceneH] + uP + uR
         sprite.shader = shader
@@ -143,19 +172,23 @@ final class DropletVisual: SKNode {
         uWorldY.floatValue = Float(center.y)
 
         contactShadow.alpha = groundMix * 0.42 * (1 - steamMix)
+
+        // Rain intensifies as the condensation clock runs down.
+        drips.particleBirthRate = (steamMix > 0.5 && steamRemaining < 0.45)
+            ? (0.45 - steamRemaining) * 70 : 0
     }
 
     // MARK: shader
 
     private static let source = """
-    // Backdrop gradient, must match GameScene.bgTexture stops.
-    // t: 0 = scene bottom, 1 = scene top.
-    vec3 bgColor(float t) {
-        vec3 top = vec3(0.11, 0.13, 0.26);
-        vec3 mid = vec3(0.06, 0.08, 0.16);
-        vec3 bot = vec3(0.02, 0.04, 0.08);
-        vec3 hi = mix(mid, top, clamp((t - 0.45) / 0.55, 0.0, 1.0));
-        vec3 lo = mix(bot, mid, clamp(t / 0.45, 0.0, 1.0));
+    // Backdrop gradient — must match the stops used by GameScene.bgTexture.
+    // t: 0 = scene bottom, 1 = scene top. The mood colors are passed as
+    // ARGUMENTS: SpriteKit's GLSL->Metal translation only exposes uniforms
+    // inside main(), so helper functions must receive them (a bare uniform
+    // reference here fails to compile and renders an opaque white quad).
+    vec3 bgColor(float t, vec3 cTop, vec3 cMid, vec3 cBot) {
+        vec3 hi = mix(cMid, cTop, clamp((t - 0.45) / 0.55, 0.0, 1.0));
+        vec3 lo = mix(cBot, cMid, clamp(t / 0.45, 0.0, 1.0));
         return t > 0.45 ? hi : lo;
     }
 
@@ -179,9 +212,10 @@ final class DropletVisual: SKNode {
         float ang = atan(uv.y, uv.x);
         float wr = 1.0 + u_wob * 0.20 * sin(ang * 3.0 + u_time * 26.0)
                        + u_wob * 0.09 * sin(ang * 5.0 - u_time * 31.0)
-                       // vapor billows slowly all the time
+                       // vapor billows slowly with a finer curling detail
                        + u_steam * (0.10 * sin(ang * 2.0 + u_time * 3.1)
-                                  + 0.07 * sin(ang * 4.0 - u_time * 2.3));
+                                  + 0.07 * sin(ang * 4.0 - u_time * 2.3)
+                                  + 0.045 * sin(ang * 7.0 + u_time * 5.3));
         float r0 = u_r0 * wr;
         float d2 = max(dot(uv, uv), 0.00001);
         float field = r0 * r0 / d2;
@@ -228,7 +262,9 @@ final class DropletVisual: SKNode {
         float tR = clamp((wy - n.y * bendPts * 1.15) / u_sceneH, 0.0, 1.0);
         float tG = clamp((wy - n.y * bendPts)        / u_sceneH, 0.0, 1.0);
         float tB = clamp((wy - n.y * bendPts * 0.85) / u_sceneH, 0.0, 1.0);
-        vec3 refr = vec3(bgColor(tR).r, bgColor(tG).g, bgColor(tB).b);
+        vec3 refr = vec3(bgColor(tR, u_bgTop, u_bgMid, u_bgBot).r,
+                         bgColor(tG, u_bgTop, u_bgMid, u_bgBot).g,
+                         bgColor(tB, u_bgTop, u_bgMid, u_bgBot).b);
 
         // Transparent body: refracted bg, cool-tinted and glassy-darkened
         // with thickness.
