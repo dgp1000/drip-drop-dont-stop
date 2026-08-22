@@ -272,36 +272,70 @@ enum Decor {
         return node
     }
 
-    /// Grate: cyan metallic slats over a dark base — passable-looking (ice
-    /// crosses it) but clearly machined, unlike the raw hazard pit.
+    /// Grate: steel bars over a visible dark void, with water perpetually
+    /// trickling down through the gaps — the trickle is what tells you
+    /// liquid falls through here. Ice crosses it; that's the cyan accent.
     static func grate(rect: CGRect) -> SKNode {
         let node = SKNode()
         node.position = CGPoint(x: rect.midX, y: rect.midY)
 
-        let base = SKShapeNode(rectOf: rect.size, cornerRadius: 2)
-        base.fillColor = UIColor(red: 0.0, green: 0.10, blue: 0.13, alpha: 0.6)
-        base.strokeColor = UIColor.systemCyan.withAlphaComponent(0.55)
-        base.lineWidth = 1
-        node.addChild(base)
+        // The void beneath the bars.
+        let void = SKShapeNode(rectOf: rect.size, cornerRadius: 2)
+        void.fillColor = UIColor(red: 0.01, green: 0.03, blue: 0.05, alpha: 0.95)
+        void.strokeColor = UIColor(red: 0.30, green: 0.55, blue: 0.62, alpha: 0.6)
+        void.lineWidth = 1
+        node.addChild(void)
 
-        let slatCount = max(3, Int(rect.width / 18))
-        for s in 0..<slatCount {
-            let x = -rect.width / 2 + rect.width * (CGFloat(s) + 0.5) / CGFloat(slatCount)
-            let slat = SKShapeNode(rectOf: CGSize(width: 3, height: rect.height * 0.72))
-            slat.fillColor = UIColor(red: 0.25, green: 0.75, blue: 0.85, alpha: 0.65)
-            slat.strokeColor = .clear
-            slat.position = CGPoint(x: x, y: 0)
-            node.addChild(slat)
-            let cap = SKShapeNode(rectOf: CGSize(width: 3, height: 1.6))
-            cap.fillColor = UIColor.white.withAlphaComponent(0.4)
+        // Machined steel bars: bright caps, shaded feet, real gaps between.
+        let barCount = max(4, Int(rect.width / 13))
+        for s in 0..<barCount {
+            let x = -rect.width / 2 + rect.width * (CGFloat(s) + 0.5) / CGFloat(barCount)
+            let bar = SKShapeNode(rectOf: CGSize(width: 4.5, height: rect.height * 0.9),
+                                  cornerRadius: 1.5)
+            bar.fillColor = UIColor(red: 0.42, green: 0.58, blue: 0.66, alpha: 0.95)
+            bar.strokeColor = .clear
+            bar.position = CGPoint(x: x, y: 0)
+            node.addChild(bar)
+            let cap = SKShapeNode(rectOf: CGSize(width: 4.5, height: 2))
+            cap.fillColor = UIColor.white.withAlphaComponent(0.55)
             cap.strokeColor = .clear
-            cap.position = CGPoint(x: x, y: rect.height * 0.36 - 0.8)
+            cap.position = CGPoint(x: x, y: rect.height * 0.45 - 1)
             node.addChild(cap)
+            let foot = SKShapeNode(rectOf: CGSize(width: 4.5, height: 2))
+            foot.fillColor = UIColor.black.withAlphaComponent(0.45)
+            foot.strokeColor = .clear
+            foot.position = CGPoint(x: x, y: -rect.height * 0.45 + 1)
+            node.addChild(foot)
         }
-        node.run(.repeatForever(.sequence([
-            .fadeAlpha(to: 0.82, duration: 1.6),
-            .fadeAlpha(to: 1.0, duration: 1.6),
-        ])))
+
+        // The machined lip along the top edge.
+        let rail = SKShapeNode(rectOf: CGSize(width: rect.width, height: 2.2),
+                               cornerRadius: 1.1)
+        rail.fillColor = UIColor(red: 0.55, green: 0.75, blue: 0.85, alpha: 0.9)
+        rail.strokeColor = .clear
+        rail.glowWidth = 1
+        rail.position = CGPoint(x: 0, y: rect.height / 2 - 1.1)
+        node.addChild(rail)
+
+        // Water threading down through the gaps — the storytelling.
+        let trickle = SKEmitterNode()
+        trickle.particleTexture = softDot
+        trickle.particleBirthRate = 7
+        trickle.particleLifetime = 0.55
+        trickle.particleSpeed = 42
+        trickle.particleSpeedRange = 18
+        trickle.emissionAngle = -.pi / 2
+        trickle.emissionAngleRange = 0.1
+        trickle.particlePositionRange = CGVector(dx: rect.width * 0.92, dy: 2)
+        trickle.position = CGPoint(x: 0, y: rect.height / 2 - 2)
+        trickle.particleAlpha = 0.5
+        trickle.particleAlphaSpeed = -0.8
+        trickle.particleScale = 0.16
+        trickle.particleScaleRange = 0.06
+        trickle.particleColor = UIColor(red: 0.45, green: 0.72, blue: 1.0, alpha: 1)
+        trickle.particleColorBlendFactor = 1
+        node.addChild(trickle)
+
         return node
     }
 
