@@ -7,5 +7,13 @@
          TestFlight build is available to testers without the manual step. -->
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
+    <!-- Hard portrait lock: tilting is the controller, rotation is the
+         enemy. Belt-and-braces alongside Package.swift's orientation. -->
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+    <key>UIRequiresFullScreen</key>
+    <true/>
 </dict>
 </plist>

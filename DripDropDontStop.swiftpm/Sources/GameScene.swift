@@ -239,8 +239,11 @@ enum Levels {
               par: 20,
               blowAllowed: true,
               mood: .storm),
+        // Switchback's route REQUIRES a mid-slide puff over the storey-2
+        // pit — it belongs to the lift set (missed in the first
+        // blowAllowed audit; David found it unwinnable without lift).
         Level(name: "Switchback",
-              hint: "FREEZE early — grates on every storey. Work right, drop, work LEFT over the pit, then skate home.",
+              hint: "FREEZE early — grates on every storey. Work right, drop, work LEFT and PUFF over the pit mid-slide, then skate home.",
               spawn: CGPoint(x: 0.06, y: 0.90),
               walls: [
                   CGRect(x: 0.00, y: 0.70, width: 0.75, height: 0.03),
@@ -252,7 +255,8 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.00, y: 0.00, width: 0.55, height: 0.035), kind: .grate),
                   Zone(rect: CGRect(x: 0.02, y: 0.015, width: 0.12, height: 0.05), kind: .goal),
               ],
-              par: 24),
+              par: 24,
+              blowAllowed: true),
         Level(name: "Meltpoint",
               hint: "FREEZE for the grates, puff the pit — then MELT mid-air to drop short of the far drain. Ice flies; water falls.",
               spawn: CGPoint(x: 0.06, y: 0.90),
