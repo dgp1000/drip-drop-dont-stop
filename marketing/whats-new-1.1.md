@@ -29,11 +29,15 @@ Water splatters. Ice flies. Steam rises.
 
 ## Screenshot set (marketing/screenshots-1.1/)
 
-`asc_*.png` are upload-ready at 1284×2778 (6.5"):
+`asc_*.png` are upload-ready at 1284×2778 (6.5"), showing the diorama
+worlds:
 1. `asc_1_menu.png` — level select with thumbnails (22 levels)
-2. `asc_2_water.png` — the photoreal droplet, abyss mood
-3. `asc_3_boiler.png` — Boiler Room: ice on grates, warm mood
-4. `asc_4_thread.png` — Threadneedle: vapor mid-climb, mist mood
-5. `asc_5_piston.png` — Piston & Pane: anti-phase lifts, ice curtain, storm mood
+2. `asc_2_water.png` — The Descent in the night kitchen (faucet, counters)
+3. `asc_3_boiler.png` — Boiler Room: ice on grates under the copper pipe
+4. `asc_4_thread.png` — Threadneedle: vapor mid-climb in the greenhouse
+5. `asc_5_piston.png` — Piston & Pane: rooftop rain and the ice curtain
 
 Suggested ASC order: 4 (steam!), 2, 3, 5, 1 — action first, menu last.
+If the description gets a refresh too, "every level is a miniature
+diorama — kitchens, freezers, boiler rooms, rooftops, greenhouses" now
+earns its place in the first paragraph.
