@@ -759,6 +759,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     /// waits; play (and the drain) begins on GO.
     private func startCountdown() {
         runState = .countdown
+        model?.phaseLocked = true
         droplet.physicsBody?.isDynamic = false
         removeAction(forKey: "countdown")
         model?.countdown = "READY"
@@ -781,6 +782,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
                 self.droplet.physicsBody?.isDynamic = true
                 self.levelStartTime = CACurrentMediaTime()
                 self.runState = .playing
+                self.model?.phaseLocked = false
                 self.spawnMarker?.run(.sequence([.fadeOut(withDuration: 0.4),
                                                  .removeFromParent()]))
                 self.spawnMarker = nil

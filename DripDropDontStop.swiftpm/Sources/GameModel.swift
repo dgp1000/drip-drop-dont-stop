@@ -20,6 +20,9 @@ final class GameModel: ObservableObject {
     @Published var micActive = false
     /// Remaining lift air supply, 1→0. Empty = no more lift; ↺ refills.
     @Published var liftFrac: CGFloat = 1
+    /// Phase buttons are locked until READY-STEADY-GO completes — now that
+    /// phases run on clocks, a countdown freeze would be a free head start.
+    @Published var phaseLocked = true
     /// False during the post-condense recharge (scene-driven). The cooldown
     /// is what keeps steam a committed leap instead of a second hover verb.
     @Published var steamReady = true
@@ -73,8 +76,8 @@ final class GameModel: ObservableObject {
             DispatchQueue.main.async { [weak self] in
                 self?.startGame(at: idx)
                 if let forced {
-                    // After didMove's level reload (which resets to water).
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    // After the countdown finishes (phases are GO-locked).
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 4.2) {
                         self?.phase = forced
                     }
                 }
@@ -141,7 +144,7 @@ final class GameModel: ObservableObject {
         brightnessTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             guard let self else { return }
             let b = UIScreen.main.brightness
-            if b < 0.08, self.phase == .water {
+            if b < 0.08, self.phase == .water, !self.phaseLocked {
                 self.phase = .ice
                 self.autoFroze = true
             } else if b > 0.4, self.autoFroze {
@@ -152,6 +155,7 @@ final class GameModel: ObservableObject {
     }
 
     func toggleIce() {
+        guard !phaseLocked else { return }
         autoFroze = false
         phase = (phase == .ice) ? .water : .ice
     }
@@ -159,6 +163,7 @@ final class GameModel: ObservableObject {
     /// Steam toggle; from ice this sublimates straight to vapor. Condensing
     /// is always allowed; vaporizing waits out the recharge.
     func toggleSteam() {
+        guard !phaseLocked else { return }
         autoFroze = false
         if phase == .steam {
             phase = .water

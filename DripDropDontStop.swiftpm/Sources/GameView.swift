@@ -60,6 +60,8 @@ struct GameView: View {
                                 model.isIce ? Color.blue.opacity(0.4) : Color.cyan.opacity(0.25),
                                 in: Capsule())
                     }
+                    .disabled(model.phaseLocked)
+                    .opacity(model.phaseLocked ? 0.4 : 1)
 
                     if model.steamAllowed {
                         Button {
@@ -78,8 +80,8 @@ struct GameView: View {
                                                           : Color.white.opacity(0.18),
                                     in: Capsule())
                         }
-                        .disabled(model.phase != .steam && !model.steamReady)
-                        .opacity(model.phase != .steam && !model.steamReady ? 0.4 : 1)
+                        .disabled(model.phaseLocked || (model.phase != .steam && !model.steamReady))
+                        .opacity(model.phaseLocked || (model.phase != .steam && !model.steamReady) ? 0.4 : 1)
                     }
 
                     if model.carveAllowed {

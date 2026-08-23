@@ -152,8 +152,9 @@ reading, 0.9 s on STEADY). The level's hint is shown as a card under the
 countdown — the hints are written as imperative instructions (TILT / BLOW /
 FREEZE / DRAW) so first-timers know the verb before play starts.
 The droplet holds at spawn and the score clock waits; play begins on GO.
-Freezing or pre-drawing channels during the countdown is allowed — that's
-strategy, not cheating.
+Phase buttons are LOCKED (dimmed) until GO — with phases on clocks, a
+countdown freeze would be a free head start. Pre-drawing channels is
+still allowed: ink is budgeted per stroke, so it buys planning, not time.
 
 **Scoring**: each level has a 1000-point pot that drains linearly from the
 moment the level starts, reaching the 50-point floor at 2× the level's par
