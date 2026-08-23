@@ -102,15 +102,16 @@ struct GameView: View {
 
                     if model.blowAllowed {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(model.micActive ? "MIC" : "HOLD")
+                        Label("LIFT", systemImage: "wind")
                             .font(.system(size: 9, weight: .bold))
                             .tracking(1.5)
                             .foregroundStyle(.white.opacity(0.5))
                         GeometryReader { geo in
                             ZStack(alignment: .leading) {
                                 Capsule().fill(.white.opacity(0.12))
-                                Capsule().fill(.cyan)
-                                    .frame(width: geo.size.width * CGFloat(min(1, model.blowLevel)))
+                                Capsule()
+                                    .fill(model.liftFrac > 0.3 ? Color.cyan : Color.orange)
+                                    .frame(width: geo.size.width * model.liftFrac)
                             }
                         }
                         .frame(height: 6)

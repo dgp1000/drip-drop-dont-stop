@@ -75,6 +75,15 @@ back to water after 2.8 s, followed by a 0.7 s recharge before the next
 vaporize (the button dims). It cannot enter the basin (liquid only),
 blowing does nothing to it, and icicles condense it dead — which is what
 keeps the existing no-fly ceilings honest.
+TESTER-DRIVEN PIVOT (23 Aug): touch-and-hold and breath are both
+first-class lift inputs (testers found taps more controllable than
+blowing — the earlier mic-gating of holds is reverted), and lift is now a
+budgeted AIR SUPPLY per level (`Level.liftBudget`, default 8s of thrust,
+Chimney 12s): the LIFT bar drains while lifting, goes orange when low,
+and empty means no more lift until the level reloads — death does NOT
+refill it, the ↺ restart does. This is the elegant fix for hover being a
+skeleton key; some blow-gated late levels may be re-openable with small
+budgets.
 Device-playtest lesson: steam and blow originally blurred into the same
 "float up" feel. They're separated by rhythm now — blow is the hover jet
 (slow, precise, continuous, vulnerable), steam is the committed leap

@@ -105,6 +105,10 @@ struct Level {
     var blowAllowed = true
     /// Ambience palette for this diorama.
     var mood: Mood = .abyss
+    /// Seconds of lift thrust per level (tester-requested air supply):
+    /// hold/blow drains it; empty = no more lift until restart. Death does
+    /// NOT refill it — the ↺ restart does.
+    var liftBudget: Double = 8
 }
 
 enum Levels {
@@ -133,7 +137,7 @@ enum Levels {
               ],
               par: 9),
         Level(name: "Updraft",
-              hint: "BLOW on the microphone to lift the droplet over the wall (or touch & hold the screen).",
+              hint: "HOLD the screen (or blow on the mic) to ride the updraft over the wall — the LIFT bar is your air supply. Empty means restart.",
               spawn: CGPoint(x: 0.15, y: 0.25),
               walls: [
                   CGRect(x: 0.47, y: 0.00, width: 0.06, height: 0.40),
@@ -211,7 +215,8 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.05, y: 0.775, width: 0.14, height: 0.05), kind: .goal),
               ],
               par: 32,
-              mood: .warm),
+              mood: .warm,
+              liftBudget: 12),      // the long climb gets a deeper lung
         Level(name: "Boost Slide",
               hint: "FREEZE, tilt to skate, and BLOW quick puffs to hop the bump and the pit. Stay LOW — icicles above.",
               spawn: CGPoint(x: 0.07, y: 0.10),
@@ -563,6 +568,8 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     private var steamElapsed: TimeInterval = 0
     private var steamFrac: CGFloat = 1          // remaining vapor time, 1→0
     private var steamCooldownUntil: TimeInterval = 0
+    private var liftRemaining: CGFloat = 0
+    private var levelLiftBudget: CGFloat = 8
     /// Zones in scene coordinates, checked geometrically every frame.
     /// Sensor-style physics contacts (collision-less bodies) proved
     /// unreliable for a ball rolling along the scene edge, so the checks
@@ -677,6 +684,9 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         model?.inkFrac = 1
         model?.steamAllowed = level.steamAllowed
         model?.blowAllowed = level.blowAllowed
+        levelLiftBudget = CGFloat(level.liftBudget)
+        liftRemaining = levelLiftBudget
+        model?.liftFrac = 1
         model?.phase = .water           // every level starts as water
         model?.steamReady = true
         steamElapsed = 0
@@ -997,13 +1007,20 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         }
 
         let pointsPerMeter: CGFloat = 150
-        // "Up" belongs to breath — except as vapor, which owns its own
-        // rise, and on blow-gated levels, where breath does nothing.
-        // Touch-and-hold is strictly the mic's understudy: it lifts only
-        // when the mic isn't live (denied, failed, or simulator).
-        let hold: CGFloat = (holdingLift && !model.micActive) ? 0.9 : 0
-        let lift = (model.phase == .steam || !model.blowAllowed) ? 0
+        // Lift: touch-and-hold and breath are both first-class (testers
+        // preferred taps), gated by phase, level, and the AIR SUPPLY —
+        // lifting drains the budget; empty means no more lift until the
+        // level reloads. This is what keeps hover from being a skeleton
+        // key now that it's precise.
+        let hold: CGFloat = holdingLift ? 0.9 : 0
+        var lift = (model.phase == .steam || !model.blowAllowed || liftRemaining <= 0) ? 0
                  : max(hold, CGFloat(model.blowLevel))
+        if lift > 0.10 {
+            liftRemaining = max(0, liftRemaining - frameDT)
+            let frac = liftRemaining / max(levelLiftBudget, 0.01)
+            if abs((model.liftFrac) - frac) > 0.005 { model.liftFrac = frac }
+            if liftRemaining <= 0 { lift = 0 }
+        }
         currentLift = lift > 0.10 ? lift : 0
         if lift > 0.10 {
             // Proportional all the way down — no free weightlessness at the

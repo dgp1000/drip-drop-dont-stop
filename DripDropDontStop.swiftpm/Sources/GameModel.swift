@@ -15,9 +15,11 @@ final class GameModel: ObservableObject {
     @Published var phase: Phase = .water
     @Published var steamAllowed = false
     @Published var blowAllowed = true
-    /// True when the mic is live — breath owns lift and holds are inert.
-    /// False (denied / engine failure / simulator) — holds are the lift.
+    /// Whether the mic is delivering breath input (informational — holds
+    /// and breath are BOTH first-class lift now; testers preferred taps).
     @Published var micActive = false
+    /// Remaining lift air supply, 1→0. Empty = no more lift; ↺ refills.
+    @Published var liftFrac: CGFloat = 1
     /// False during the post-condense recharge (scene-driven). The cooldown
     /// is what keeps steam a committed leap instead of a second hover verb.
     @Published var steamReady = true
