@@ -107,8 +107,9 @@ struct Level {
     var mood: Mood = .abyss
     /// Seconds of lift thrust per level (tester-requested air supply):
     /// hold/blow drains it; empty = no more lift until restart. Death does
-    /// NOT refill it — the ↺ restart does.
-    var liftBudget: Double = 8
+    /// NOT refill it — the ↺ restart does. (Halved from 8 after David
+    /// found the first budget far too generous.)
+    var liftBudget: Double = 4
 }
 
 enum Levels {
@@ -216,7 +217,7 @@ enum Levels {
               ],
               par: 32,
               mood: .warm,
-              liftBudget: 12),      // the long climb gets a deeper lung
+              liftBudget: 6),       // the long climb gets a deeper lung
         Level(name: "Boost Slide",
               hint: "FREEZE, tilt to skate, and BLOW quick puffs to hop the bump and the pit. Stay LOW — icicles above.",
               spawn: CGPoint(x: 0.07, y: 0.10),
