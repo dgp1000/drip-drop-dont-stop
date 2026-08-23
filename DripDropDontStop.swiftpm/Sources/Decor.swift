@@ -909,20 +909,7 @@ enum Decor {
                 }
                 x += size.width * 0.26
             }
-            // Fan grille, top right.
-            let fc = CGPoint(x: size.width * 0.82, y: size.height * 0.12)
-            let fr: CGFloat = size.width * 0.09
-            c.setStrokeColor(UIColor.white.withAlphaComponent(0.22).cgColor)
-            c.setLineWidth(2.5)
-            c.strokeEllipse(in: CGRect(x: fc.x - fr, y: fc.y - fr, width: fr * 2, height: fr * 2))
-            c.strokeEllipse(in: CGRect(x: fc.x - fr * 0.55, y: fc.y - fr * 0.55,
-                                       width: fr * 1.1, height: fr * 1.1))
-            for i in 0..<4 {
-                let a = CGFloat(i) * .pi / 4
-                c.move(to: CGPoint(x: fc.x - cos(a) * fr, y: fc.y - sin(a) * fr))
-                c.addLine(to: CGPoint(x: fc.x + cos(a) * fr, y: fc.y + sin(a) * fr))
-            }
-            c.strokePath()
+            // (Fan is a separate animated node now — see below.)
             // Frost creeping from the bottom corners.
             for (cx, cy) in [(0.0, size.height), (size.width, size.height)] {
                 let fgrad = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
@@ -934,11 +921,48 @@ enum Decor {
                                      endRadius: size.width * 0.5, options: [])
             }
         }
+        let node = SKNode()
         let sprite = SKSpriteNode(texture: SKTexture(image: img))
         sprite.size = size
         sprite.position = CGPoint(x: size.width / 2, y: size.height / 2)
         sprite.zPosition = -100
-        return sprite
+        node.addChild(sprite)
+        // The extractor fan: blades genuinely spin behind a static grille.
+        let fan = SKNode()
+        fan.position = CGPoint(x: size.width * 0.30, y: size.height * 0.76)
+        fan.zPosition = -96
+        let fr = size.width * 0.09
+        let ring = SKShapeNode(circleOfRadius: fr)
+        ring.strokeColor = UIColor.white.withAlphaComponent(0.22)
+        ring.lineWidth = 2.5
+        fan.addChild(ring)
+        let blades = SKNode()
+        for i in 0..<3 {
+            let a = CGFloat(i) * 2 * .pi / 3
+            let blade = SKShapeNode(ellipseOf: CGSize(width: fr * 0.85, height: fr * 0.34))
+            blade.fillColor = UIColor.white.withAlphaComponent(0.13)
+            blade.strokeColor = .clear
+            blade.position = CGPoint(x: cos(a) * fr * 0.45, y: sin(a) * fr * 0.45)
+            blade.zRotation = a
+            blades.addChild(blade)
+        }
+        blades.run(.repeatForever(.rotate(byAngle: -2 * .pi, duration: 5.5)))
+        fan.addChild(blades)
+        let hub = SKShapeNode(circleOfRadius: fr * 0.14)
+        hub.fillColor = UIColor.white.withAlphaComponent(0.28)
+        hub.strokeColor = .clear
+        fan.addChild(hub)
+        // Static safety grille in front of the spin.
+        for a in [0.0, CGFloat.pi / 2] {
+            let bar = SKShapeNode(rectOf: CGSize(width: fr * 2, height: 1.8))
+            bar.fillColor = UIColor.white.withAlphaComponent(0.20)
+            bar.strokeColor = .clear
+            bar.zRotation = a
+            bar.zPosition = 1
+            fan.addChild(bar)
+        }
+        node.addChild(fan)
+        return node
     }
 
     // MARK: - Diorama: boiler room (warm)
@@ -979,31 +1003,61 @@ enum Decor {
                 c.setFillColor(UIColor(red: 0.20, green: 0.12, blue: 0.08, alpha: 1).cgColor)
                 c.fill(CGRect(x: bx, y: pipeY - 2, width: 10, height: 19))
             }
-            // Pressure gauge hanging off the pipe.
-            let gc = CGPoint(x: size.width * 0.78, y: pipeY + 42)
-            c.setFillColor(UIColor(red: 0.09, green: 0.07, blue: 0.06, alpha: 1).cgColor)
-            c.fillEllipse(in: CGRect(x: gc.x - 17, y: gc.y - 17, width: 34, height: 34))
-            c.setStrokeColor(UIColor(red: 0.75, green: 0.62, blue: 0.42, alpha: 0.8).cgColor)
-            c.setLineWidth(2)
-            c.strokeEllipse(in: CGRect(x: gc.x - 17, y: gc.y - 17, width: 34, height: 34))
-            c.move(to: CGPoint(x: gc.x - 3, y: gc.y + 3))
-            c.addLine(to: CGPoint(x: gc.x + 9, y: gc.y - 9))
-            c.strokePath()
-            c.setStrokeColor(UIColor(red: 0.85, green: 0.25, blue: 0.15, alpha: 0.9).cgColor)
-            c.move(to: CGPoint(x: gc.x + 9, y: gc.y - 13))
-            c.addLine(to: CGPoint(x: gc.x + 13, y: gc.y - 9))
-            c.strokePath()
-            c.move(to: CGPoint(x: gc.x, y: pipeY + 15))
-            c.setStrokeColor(UIColor(red: 0.30, green: 0.18, blue: 0.11, alpha: 1).cgColor)
-            c.setLineWidth(6)
-            c.addLine(to: CGPoint(x: gc.x, y: gc.y - 15))
-            c.strokePath()
+            // (Gauge is a separate animated node now — see below.)
         }
         let sprite = SKSpriteNode(texture: SKTexture(image: img))
         sprite.size = size
         sprite.position = CGPoint(x: size.width / 2, y: size.height / 2)
         sprite.zPosition = -100
         node.addChild(sprite)
+        // Pressure gauge in the HUD dead zone (between title and score),
+        // with a nervously twitching needle — the boiler is working.
+        let pipeYSK = size.height * 0.955
+        let gauge = SKNode()
+        gauge.position = CGPoint(x: size.width * 0.63, y: size.height - (size.height * 0.045 + 42))
+        gauge.zPosition = -96
+        let stem = SKShapeNode(rectOf: CGSize(width: 6, height: pipeYSK - gauge.position.y))
+        stem.fillColor = UIColor(red: 0.30, green: 0.18, blue: 0.11, alpha: 1)
+        stem.strokeColor = .clear
+        stem.position = CGPoint(x: 0, y: (pipeYSK - gauge.position.y) / 2)
+        gauge.addChild(stem)
+        let face = SKShapeNode(circleOfRadius: 17)
+        face.fillColor = UIColor(red: 0.09, green: 0.07, blue: 0.06, alpha: 1)
+        face.strokeColor = UIColor(red: 0.75, green: 0.62, blue: 0.42, alpha: 0.8)
+        face.lineWidth = 2
+        gauge.addChild(face)
+        let redline = SKShapeNode(rectOf: CGSize(width: 6, height: 2))
+        redline.fillColor = UIColor(red: 0.85, green: 0.25, blue: 0.15, alpha: 0.9)
+        redline.strokeColor = .clear
+        redline.position = CGPoint(x: 10, y: 10)
+        redline.zRotation = -.pi / 4
+        gauge.addChild(redline)
+        let needlePath = CGMutablePath()
+        needlePath.move(to: .zero)
+        needlePath.addLine(to: CGPoint(x: 0, y: 12))
+        let needle = SKShapeNode(path: needlePath)
+        needle.strokeColor = UIColor(red: 0.9, green: 0.85, blue: 0.75, alpha: 0.95)
+        needle.lineWidth = 2
+        needle.lineCap = .round
+        needle.zRotation = -0.5
+        // The twitch: mostly mid-range, occasionally straining at the red.
+        needle.run(.repeatForever(.sequence([
+            .rotate(toAngle: -0.35, duration: 1.1, shortestUnitArc: true),
+            .wait(forDuration: 0.5, withRange: 0.8),
+            .rotate(toAngle: -0.85, duration: 0.7, shortestUnitArc: true),
+            .wait(forDuration: 0.4, withRange: 0.6),
+            .rotate(toAngle: -0.20, duration: 0.35, shortestUnitArc: true),
+            .wait(forDuration: 0.3, withRange: 0.5),
+            .rotate(toAngle: -0.60, duration: 0.9, shortestUnitArc: true),
+            .wait(forDuration: 0.6, withRange: 0.9),
+        ])))
+        gauge.addChild(needle)
+        let pin = SKShapeNode(circleOfRadius: 2.2)
+        pin.fillColor = UIColor(red: 0.75, green: 0.62, blue: 0.42, alpha: 1)
+        pin.strokeColor = .clear
+        gauge.addChild(pin)
+        node.addChild(gauge)
+
         // Ember light breathing up from below.
         let ember = SKSpriteNode(texture: emberGlow)
         ember.size = CGSize(width: size.width * 1.3, height: size.height * 0.5)
