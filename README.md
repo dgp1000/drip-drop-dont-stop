@@ -83,7 +83,13 @@ Chimney 12s): the LIFT bar drains while lifting, goes orange when low,
 and empty means no more lift until the level reloads — death does NOT
 refill it, the ↺ restart does. This is the elegant fix for hover being a
 skeleton key; some blow-gated late levels may be re-openable with small
-budgets.
+budgets. Lift also now exists ONLY on the six levels designed around the
+mic (2, 7, 8, 10, 12, 13) — everywhere else the verb set stays pure.
+And every non-water phase is on a clock: ice melts back after
+`Level.iceDuration` (default 8 s) just as vapor condenses after 2.8 s,
+with both flickering visibly toward water as expiry approaches. Melting
+over a grate is death — long-skate levels (11, 22, Switchback…) may need
+a per-level `iceDuration` bump after playtesting.
 Device-playtest lesson: steam and blow originally blurred into the same
 "float up" feel. They're separated by rhythm now — blow is the hover jet
 (slow, precise, continuous, vulnerable), steam is the committed leap

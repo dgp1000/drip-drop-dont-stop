@@ -123,7 +123,7 @@ final class DropletVisual: SKNode {
 
     /// Sync the visual to the physics ball once per frame (didFinishUpdate).
     func sync(center: CGPoint, velocity: CGVector, grounded: Bool,
-              phase: Phase, steamRemaining: CGFloat,
+              phase: Phase, steamRemaining: CGFloat, iceRemaining: CGFloat,
               lift: CGFloat, now: TimeInterval, dt: CGFloat) {
         position = center
         let speed = hypot(velocity.dx, velocity.dy)
@@ -164,8 +164,16 @@ final class DropletVisual: SKNode {
             uStretch.vectorFloat2Value = vector_float2(0, 0)
         }
         uWob.floatValue = Float(wobble * (1 - iceMix * 0.85))
-        uIce.floatValue = Float(iceMix)
-        uSteam.floatValue = Float(steamMix)
+        // Expiry warning: as a phase clock runs out, the body flickers
+        // between its phase look and water — the flash IS the morph-back
+        // starting.
+        var iceOut = iceMix
+        var steamOut = steamMix
+        let flicker = 0.60 + 0.40 * CGFloat(sin(now * 17))
+        if phase == .ice, iceRemaining < 0.19 { iceOut *= flicker }
+        if phase == .steam, steamRemaining < 0.32 { steamOut *= flicker }
+        uIce.floatValue = Float(iceOut)
+        uSteam.floatValue = Float(steamOut)
         uRem.floatValue = Float(steamRemaining)
         uLift.floatValue = Float(lift)
         uGround.floatValue = Float(groundMix * (1 - iceMix))

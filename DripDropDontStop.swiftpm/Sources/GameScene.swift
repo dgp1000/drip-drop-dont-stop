@@ -110,6 +110,10 @@ struct Level {
     /// NOT refill it — the ↺ restart does. (8 → 4 → 2 across David's
     /// tuning passes: scarcity is the point.)
     var liftBudget: Double = 2
+    /// How long ice holds before melting back on its own. Expiring over a
+    /// grate is death — levels with long mandatory skates (11, 22…) may
+    /// need a longer freeze.
+    var iceDuration: Double = 8
 }
 
 enum Levels {
@@ -577,6 +581,10 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     private var steamCooldownUntil: TimeInterval = 0
     private var liftRemaining: CGFloat = 0
     private var levelLiftBudget: CGFloat = 8
+    private var iceElapsed: TimeInterval = 0
+    private var iceFrac: CGFloat = 1            // remaining freeze time, 1→0
+    private var levelIceDuration: TimeInterval = 8
+    private var phaseWarned = false             // one warning cue per phase
     /// Zones in scene coordinates, checked geometrically every frame.
     /// Sensor-style physics contacts (collision-less bodies) proved
     /// unreliable for a ball rolling along the scene edge, so the checks
@@ -610,11 +618,11 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     // as the droplet-refraction ambience.)
 
     private func loadSounds() {
-        for name in ["plink", "ice_tap", "freeze", "melt", "goal", "die", "tick", "go", "carve", "steam", "condense", "crumble"]
+        for name in ["plink", "ice_tap", "freeze", "melt", "goal", "die", "tick", "go", "carve", "steam", "condense", "crumble", "warn"]
         where Bundle.main.url(forResource: name, withExtension: "wav") != nil {
             sounds[name] = SKAction.playSoundFileNamed("\(name).wav", waitForCompletion: false)
         }
-        NSLog("DripDrop: loaded \(sounds.count)/12 sounds")
+        NSLog("DripDrop: loaded \(sounds.count)/13 sounds")
     }
 
     private func sfx(_ name: String) {
@@ -694,6 +702,9 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         levelLiftBudget = CGFloat(level.liftBudget)
         liftRemaining = levelLiftBudget
         model?.liftFrac = 1
+        levelIceDuration = level.iceDuration
+        iceElapsed = 0
+        iceFrac = 1
         model?.phase = .water           // every level starts as water
         model?.steamReady = true
         steamElapsed = 0
@@ -963,6 +974,8 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
             switch appliedPhase {
             case .ice:
                 sfx("freeze")
+                iceElapsed = 0
+                iceFrac = 1
             case .steam:
                 sfx("steam")
                 // The body flashes apart into vapor.
@@ -980,6 +993,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
                 }
             }
             if appliedPhase == .steam { steamElapsed = 0; steamFrac = 1 }
+            phaseWarned = false
             // Leaving vapor starts the recharge — steam is a committed
             // leap, and the cooldown is what stops tap-spam becoming a
             // second hover verb (that's blowing's job).
@@ -1005,12 +1019,26 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         // 150 points-per-meter internally) but applyForce works in point
         // units — forces must be multiplied by 150 or they're 150x too weak
         // to fight gravity. This is why earlier versions felt dead.
-        // The vapor clock: steam condenses back to water on its own. Ticks
-        // only while playing, so pre-vaporizing in the countdown is free.
+        // The phase clocks: vapor condenses and ice melts back to water on
+        // their own. Both tick only while playing, so pre-freezing or
+        // pre-vaporizing in the countdown is free strategy.
         if model.phase == .steam {
             steamElapsed += TimeInterval(frameDT)
             steamFrac = max(0, 1 - CGFloat(steamElapsed / steamDuration))
             if steamElapsed >= steamDuration { model.phase = .water }
+        }
+        if model.phase == .ice {
+            iceElapsed += TimeInterval(frameDT)
+            iceFrac = max(0, 1 - CGFloat(iceElapsed / levelIceDuration))
+            if iceElapsed >= levelIceDuration { model.phase = .water }
+        }
+        // One audible warning as a phase clock enters its flash window.
+        if !phaseWarned,
+           (model.phase == .ice && iceFrac < 0.19)
+            || (model.phase == .steam && steamFrac < 0.32) {
+            phaseWarned = true
+            sfx("warn")
+            carveHaptic.impactOccurred()
         }
 
         let pointsPerMeter: CGFloat = 150
@@ -1113,6 +1141,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
                     grounded: !body.allContactedBodies().isEmpty,
                     phase: model.phase,
                     steamRemaining: steamFrac,
+                    iceRemaining: iceFrac,
                     lift: currentLift,
                     now: lastUpdateTime,
                     dt: frameDT)
