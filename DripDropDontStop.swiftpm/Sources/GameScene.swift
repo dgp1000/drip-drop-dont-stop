@@ -99,17 +99,17 @@ struct Level {
     /// Whether the STEAM button is offered. Off for levels 1–13 so the
     /// original tuning survives — same gating precedent as ink.
     var steamAllowed = false
-    /// Whether blowing (and the touch-hold updraft) works. Blow-climb works
-    /// in every phase, making it the universal skeleton key — late levels
-    /// disable it so their intended route is the only route.
-    var blowAllowed = true
+    /// Whether lift (touch-hold or breath) works. Default is now FALSE:
+    /// lift belongs only to the levels designed around it (2, 7, 8, 10,
+    /// 12, 13) — everywhere else the verb set stays pure.
+    var blowAllowed = false
     /// Ambience palette for this diorama.
     var mood: Mood = .abyss
     /// Seconds of lift thrust per level (tester-requested air supply):
     /// hold/blow drains it; empty = no more lift until restart. Death does
-    /// NOT refill it — the ↺ restart does. (Halved from 8 after David
-    /// found the first budget far too generous.)
-    var liftBudget: Double = 4
+    /// NOT refill it — the ↺ restart does. (8 → 4 → 2 across David's
+    /// tuning passes: scarcity is the point.)
+    var liftBudget: Double = 2
 }
 
 enum Levels {
@@ -147,6 +147,7 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.76, y: 0.015, width: 0.20, height: 0.05), kind: .goal),
               ],
               par: 12,
+              blowAllowed: true,
               mood: .warm),
         Level(name: "Cold Crossing",
               hint: "Tap FREEZE to turn to ice — ice slides over the blue grates that swallow water.",
@@ -216,8 +217,9 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.05, y: 0.775, width: 0.14, height: 0.05), kind: .goal),
               ],
               par: 32,
+              blowAllowed: true,
               mood: .warm,
-              liftBudget: 6),       // the long climb gets a deeper lung
+              liftBudget: 3),       // the long climb gets a deeper lung
         Level(name: "Boost Slide",
               hint: "FREEZE, tilt to skate, and BLOW quick puffs to hop the bump and the pit. Stay LOW — icicles above.",
               spawn: CGPoint(x: 0.07, y: 0.10),
@@ -231,6 +233,7 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.88, y: 0.015, width: 0.11, height: 0.05), kind: .goal),
               ],
               par: 20,
+              blowAllowed: true,
               mood: .storm),
         Level(name: "Switchback",
               hint: "FREEZE early — grates on every storey. Work right, drop, work LEFT over the pit, then skate home.",
@@ -258,6 +261,7 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.90, y: 0.00, width: 0.10, height: 0.035), kind: .drain),
               ],
               par: 18,
+              blowAllowed: true,
               mood: .warm),
         // One way only: no blowing, all-grate floor. Freeze mid-fall, board
         // the (narrow, fast) lift when it's low, ride up, roll off right.
@@ -303,6 +307,7 @@ enum Levels {
                         travel: CGVector(dx: 0, dy: 0.135), period: 4.5),
               ],
               par: 26,
+              blowAllowed: true,
               mood: .frost),
         // One way only: the goal ledge is capped (ceiling + side wall), so
         // the sole entry is the hop from the lift's apex. Ink is cut to a
@@ -329,6 +334,7 @@ enum Levels {
               ],
               inkBudget: 160,
               par: 34,
+              blowAllowed: true,
               mood: .storm),
         // MARK: v1.1 — the steam levels. STEAM rises as vapor, drifts with
         // reduced tilt authority, ignores floor drains and grates, dies to
