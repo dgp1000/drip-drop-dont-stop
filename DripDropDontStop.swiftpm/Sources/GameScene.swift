@@ -690,10 +690,13 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         addChild(Decor.dioramaBackdrop(theme: theme, size: size))
         addChild(Decor.vignette(size: size))
         for mote in Decor.motes(size: size, color: level.mood.moteColor) { addChild(mote) }
-        if let prop = Decor.signatureProp(theme: theme, spawn: point(level.spawn),
-                                          sceneSize: size) {
+        if let prop = Decor.ambientProp(theme: theme, sceneSize: size) {
             addChild(prop)
         }
+        // Every droplet comes from somewhere: faucet, cracked pipe, hose,
+        // scupper — dripping above the spawn.
+        addChild(Decor.sourceProp(theme: theme, spawn: point(level.spawn),
+                                  sceneSize: size))
 
         // removeAllChildren() took the camera with it; small shakes only.
         let camera = SKCameraNode()
@@ -823,7 +826,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         let node: SKNode
         switch z.kind {
         case .goal:
-            node = Decor.goalPool(rect: r)
+            node = Decor.goalVessel(rect: r, theme: Decor.currentTheme)
         case .drain:
             node = z.rect.minY > 0.06 ? Decor.icicles(rect: r) : Decor.drainPit(rect: r)
         case .grate:

@@ -141,9 +141,10 @@ enum Decor {
 
     // MARK: - Zones
 
-    /// Goal: a glowing pool of still water — gradient basin, breathing outer
-    /// glow, expanding surface ripples, a lazy stream of rising bubbles.
-    static func goalPool(rect: CGRect) -> SKNode {
+    /// Goal: a themed vessel that collects the droplet — glass, ice-cube
+    /// tray, bucket, rain barrel, or plant pot. The green glow, ripples and
+    /// bubbles are shared across all themes: that's the "home" language.
+    static func goalVessel(rect: CGRect, theme: DioramaTheme) -> SKNode {
         let node = SKNode()
         node.position = CGPoint(x: rect.midX, y: rect.midY)
 
@@ -158,18 +159,128 @@ enum Decor {
         ])))
         node.addChild(glow)
 
-        let basin = SKShapeNode(rectOf: rect.size, cornerRadius: 3)
-        basin.fillColor = UIColor(red: 0.05, green: 0.42, blue: 0.28, alpha: 0.9)
-        basin.strokeColor = UIColor(red: 0.35, green: 0.95, blue: 0.65, alpha: 0.9)
-        basin.lineWidth = 1.2
-        node.addChild(basin)
+        let w = rect.width, h = rect.height
+        switch theme {
+        case .kitchen:
+            // A drinking glass: transparent walls rising past the zone.
+            let wall = UIColor(red: 0.8, green: 0.9, blue: 1.0, alpha: 0.45)
+            for sx in [-w / 2 + 1.5, w / 2 - 1.5] {
+                let side = SKShapeNode(rectOf: CGSize(width: 3, height: h + 14),
+                                       cornerRadius: 1.5)
+                side.fillColor = wall
+                side.strokeColor = .clear
+                side.position = CGPoint(x: sx, y: 7)
+                node.addChild(side)
+            }
+            let base = SKShapeNode(rectOf: CGSize(width: w, height: 3.5), cornerRadius: 1.5)
+            base.fillColor = wall
+            base.strokeColor = .clear
+            base.position = CGPoint(x: 0, y: -h / 2 + 1.5)
+            node.addChild(base)
+        case .freezer:
+            // An ice-cube tray: pale body with cube dividers.
+            let tray = SKShapeNode(rectOf: CGSize(width: w, height: h), cornerRadius: 3)
+            tray.fillColor = UIColor(red: 0.72, green: 0.82, blue: 0.94, alpha: 0.85)
+            tray.strokeColor = UIColor.white.withAlphaComponent(0.7)
+            tray.lineWidth = 1.2
+            node.addChild(tray)
+            for dx in [-w / 6, w / 6] {
+                let div = SKShapeNode(rectOf: CGSize(width: 2, height: h - 6))
+                div.fillColor = UIColor(red: 0.45, green: 0.58, blue: 0.72, alpha: 0.7)
+                div.strokeColor = .clear
+                div.position = CGPoint(x: dx, y: 0)
+                node.addChild(div)
+            }
+        case .boiler:
+            // A riveted bucket with a handle.
+            let body = CGMutablePath()
+            body.move(to: CGPoint(x: -w / 2, y: h / 2))
+            body.addLine(to: CGPoint(x: w / 2, y: h / 2))
+            body.addLine(to: CGPoint(x: w * 0.36, y: -h / 2))
+            body.addLine(to: CGPoint(x: -w * 0.36, y: -h / 2))
+            body.closeSubpath()
+            let bucket = SKShapeNode(path: body)
+            bucket.fillColor = UIColor(red: 0.42, green: 0.44, blue: 0.48, alpha: 0.95)
+            bucket.strokeColor = UIColor(red: 0.7, green: 0.72, blue: 0.78, alpha: 0.8)
+            bucket.lineWidth = 1.2
+            node.addChild(bucket)
+            let handle = SKShapeNode(path: {
+                let p = CGMutablePath()
+                p.addArc(center: CGPoint(x: 0, y: h / 2), radius: w * 0.42,
+                         startAngle: .pi * 0.15, endAngle: .pi * 0.85, clockwise: false)
+                return p
+            }())
+            handle.strokeColor = UIColor(red: 0.62, green: 0.64, blue: 0.7, alpha: 0.85)
+            handle.lineWidth = 2.5
+            node.addChild(handle)
+        case .rooftop:
+            // A rain barrel: staves and hoops.
+            let barrel = SKShapeNode(rectOf: CGSize(width: w, height: h + 8), cornerRadius: 5)
+            barrel.fillColor = UIColor(red: 0.34, green: 0.23, blue: 0.14, alpha: 0.95)
+            barrel.strokeColor = UIColor(red: 0.5, green: 0.36, blue: 0.22, alpha: 0.9)
+            barrel.lineWidth = 1.2
+            barrel.position = CGPoint(x: 0, y: -1)
+            node.addChild(barrel)
+            for hy in [-h * 0.28, h * 0.22] {
+                let hoop = SKShapeNode(rectOf: CGSize(width: w, height: 3.2))
+                hoop.fillColor = UIColor(red: 0.16, green: 0.12, blue: 0.08, alpha: 0.9)
+                hoop.strokeColor = .clear
+                hoop.position = CGPoint(x: 0, y: hy)
+                node.addChild(hoop)
+            }
+            for i in 1...3 {
+                let stave = SKShapeNode(rectOf: CGSize(width: 1.2, height: h + 6))
+                stave.fillColor = UIColor.black.withAlphaComponent(0.25)
+                stave.strokeColor = .clear
+                stave.position = CGPoint(x: -w / 2 + w * CGFloat(i) / 4, y: -1)
+                node.addChild(stave)
+            }
+        case .greenhouse:
+            // A terracotta pot with a hopeful sprout.
+            let body = CGMutablePath()
+            body.move(to: CGPoint(x: -w / 2, y: h / 2))
+            body.addLine(to: CGPoint(x: w / 2, y: h / 2))
+            body.addLine(to: CGPoint(x: w * 0.34, y: -h / 2))
+            body.addLine(to: CGPoint(x: -w * 0.34, y: -h / 2))
+            body.closeSubpath()
+            let pot = SKShapeNode(path: body)
+            pot.fillColor = UIColor(red: 0.55, green: 0.30, blue: 0.18, alpha: 0.95)
+            pot.strokeColor = UIColor(red: 0.72, green: 0.44, blue: 0.28, alpha: 0.9)
+            pot.lineWidth = 1.2
+            node.addChild(pot)
+            let rim = SKShapeNode(rectOf: CGSize(width: w + 6, height: 6), cornerRadius: 2)
+            rim.fillColor = UIColor(red: 0.66, green: 0.38, blue: 0.24, alpha: 1)
+            rim.strokeColor = .clear
+            rim.position = CGPoint(x: 0, y: h / 2 - 2)
+            node.addChild(rim)
+            let stem = SKShapeNode(rectOf: CGSize(width: 1.8, height: 10))
+            stem.fillColor = UIColor(red: 0.3, green: 0.6, blue: 0.32, alpha: 1)
+            stem.strokeColor = .clear
+            stem.position = CGPoint(x: w * 0.28, y: h / 2 + 6)
+            node.addChild(stem)
+            for (dx, rot) in [(-5.0, 0.6), (5.0, -0.6)] {
+                let leaf = SKShapeNode(ellipseOf: CGSize(width: 11, height: 5))
+                leaf.fillColor = UIColor(red: 0.32, green: 0.65, blue: 0.35, alpha: 1)
+                leaf.strokeColor = .clear
+                leaf.position = CGPoint(x: w * 0.28 + dx, y: h / 2 + 12)
+                leaf.zRotation = rot
+                node.addChild(leaf)
+            }
+        }
 
-        let surface = SKShapeNode(rectOf: CGSize(width: rect.width - 4, height: 1.8),
+        // The collected water inside, whatever the vessel.
+        let waterFill = SKShapeNode(rectOf: CGSize(width: w * 0.8, height: h * 0.42),
+                                    cornerRadius: 2)
+        waterFill.fillColor = UIColor(red: 0.10, green: 0.5, blue: 0.38, alpha: 0.8)
+        waterFill.strokeColor = .clear
+        waterFill.position = CGPoint(x: 0, y: -h * 0.18)
+        node.addChild(waterFill)
+        let surface = SKShapeNode(rectOf: CGSize(width: w * 0.8, height: 1.8),
                                   cornerRadius: 0.9)
         surface.fillColor = UIColor(red: 0.55, green: 1.0, blue: 0.8, alpha: 0.85)
         surface.strokeColor = .clear
         surface.glowWidth = 2
-        surface.position = CGPoint(x: 0, y: rect.height / 2 - 2)
+        surface.position = CGPoint(x: 0, y: h * 0.03)
         node.addChild(surface)
 
         for i in 0..<2 {
@@ -458,23 +569,154 @@ enum Decor {
         }
     }
 
-    /// The one themed prop that tells the level's story, or nil when the
-    /// backdrop already carries it.
-    static func signatureProp(theme: DioramaTheme, spawn: CGPoint,
-                              sceneSize: CGSize) -> SKNode? {
+    /// Ambient set dressing that isn't the water source.
+    static func ambientProp(theme: DioramaTheme, sceneSize: CGSize) -> SKNode? {
         switch theme {
-        case .kitchen:
-            // The droplet drips from a faucet — but only when the spawn is
-            // high enough to hang plumbing over.
-            return spawn.y > sceneSize.height * 0.55
-                ? faucet(aboveSpawn: spawn, sceneSize: sceneSize) : nil
-        case .rooftop:
-            return downpipe(sceneSize: sceneSize)
-        case .greenhouse:
-            return vines(sceneSize: sceneSize)
-        case .freezer, .boiler:
-            return nil
+        case .rooftop:    return downpipe(sceneSize: sceneSize)
+        case .greenhouse: return vines(sceneSize: sceneSize)
+        case .kitchen, .freezer, .boiler: return nil
         }
+    }
+
+    // MARK: - Water sources: every droplet comes from somewhere.
+    // High spawns hang a ceiling source; edge spawns get a wall stub.
+
+    /// A slow drip falling from the source nozzle — the droplet's siblings.
+    private static func dripEmitter() -> SKEmitterNode {
+        let e = SKEmitterNode()
+        e.particleTexture = softDot
+        e.particleBirthRate = 0.6
+        e.particleLifetime = 0.7
+        e.particleSpeed = 30
+        e.emissionAngle = -.pi / 2
+        e.yAcceleration = -420
+        e.particleAlpha = 0.6
+        e.particleAlphaSpeed = -0.7
+        e.particleScale = 0.2
+        e.particleColor = UIColor(red: 0.5, green: 0.75, blue: 1.0, alpha: 1)
+        e.particleColorBlendFactor = 1
+        return e
+    }
+
+    private static func sourcePalette(_ theme: DioramaTheme)
+        -> (pipe: UIColor, accent: UIColor) {
+        switch theme {
+        case .kitchen:    return (UIColor(red: 0.42, green: 0.44, blue: 0.48, alpha: 1),
+                                  UIColor(red: 0.75, green: 0.80, blue: 0.88, alpha: 0.9))
+        case .freezer:    return (UIColor(red: 0.48, green: 0.56, blue: 0.66, alpha: 1),
+                                  UIColor.white.withAlphaComponent(0.85))
+        case .boiler:     return (UIColor(red: 0.45, green: 0.27, blue: 0.15, alpha: 1),
+                                  UIColor(red: 0.78, green: 0.64, blue: 0.42, alpha: 0.95))
+        case .rooftop:    return (UIColor(red: 0.18, green: 0.19, blue: 0.24, alpha: 1),
+                                  UIColor(red: 0.45, green: 0.48, blue: 0.56, alpha: 0.9))
+        case .greenhouse: return (UIColor(red: 0.16, green: 0.34, blue: 0.20, alpha: 1),
+                                  UIColor(red: 0.72, green: 0.60, blue: 0.35, alpha: 0.95))
+        }
+    }
+
+    /// The level's water source, above or beside the spawn.
+    static func sourceProp(theme: DioramaTheme, spawn: CGPoint,
+                           sceneSize: CGSize) -> SKNode {
+        // The kitchen's high source is the full faucet — the original.
+        if theme == .kitchen, spawn.y > sceneSize.height * 0.72 {
+            let f = faucet(aboveSpawn: spawn, sceneSize: sceneSize)
+            let drip = dripEmitter()
+            drip.position = CGPoint(x: spawn.x + 12,
+                                    y: min(spawn.y + 46, sceneSize.height - 30) - 40)
+            f.addChild(drip)
+            return f
+        }
+        let (pipeColor, accent) = sourcePalette(theme)
+        let node = SKNode()
+        node.zPosition = -50
+
+        if spawn.y > sceneSize.height * 0.72 {
+            // Ceiling source: a pipe dropping from the top edge, ending in
+            // a nozzle above the spawn.
+            let tipY = min(spawn.y + 42, sceneSize.height - 24)
+            let path = CGMutablePath()
+            path.move(to: CGPoint(x: spawn.x, y: sceneSize.height + 8))
+            path.addLine(to: CGPoint(x: spawn.x, y: tipY))
+            let pipe = SKShapeNode(path: path)
+            pipe.strokeColor = pipeColor
+            pipe.lineWidth = 10
+            pipe.lineCap = .round
+            node.addChild(pipe)
+            let joint = SKShapeNode(rectOf: CGSize(width: 16, height: 6), cornerRadius: 2)
+            joint.fillColor = accent
+            joint.strokeColor = .clear
+            joint.position = CGPoint(x: spawn.x, y: tipY + 26)
+            node.addChild(joint)
+            let nozzle = SKShapeNode(rectOf: CGSize(width: 14, height: 7), cornerRadius: 2.5)
+            nozzle.fillColor = pipeColor
+            nozzle.strokeColor = accent
+            nozzle.lineWidth = 1
+            nozzle.position = CGPoint(x: spawn.x, y: tipY - 3)
+            node.addChild(nozzle)
+            let drip = dripEmitter()
+            drip.position = CGPoint(x: spawn.x, y: tipY - 8)
+            node.addChild(drip)
+        } else {
+            // Wall stub from the nearest side edge, elbowing down over the
+            // spawn — a cracked pipe, tap, hose, or scupper by theme.
+            let fromLeft = spawn.x < sceneSize.width / 2
+            let edgeX: CGFloat = fromLeft ? -6 : sceneSize.width + 6
+            let y = min(spawn.y + 30, sceneSize.height - 24)
+            let path = CGMutablePath()
+            path.move(to: CGPoint(x: edgeX, y: y))
+            path.addLine(to: CGPoint(x: spawn.x - (fromLeft ? 6 : -6), y: y))
+            path.addLine(to: CGPoint(x: spawn.x, y: y - 10))
+            let pipe = SKShapeNode(path: path)
+            pipe.strokeColor = pipeColor
+            pipe.lineWidth = 9
+            pipe.lineCap = .round
+            pipe.lineJoin = .round
+            node.addChild(pipe)
+            let sheen = SKShapeNode(path: path)
+            sheen.strokeColor = accent.withAlphaComponent(0.45)
+            sheen.lineWidth = 2.5
+            sheen.lineCap = .round
+            sheen.position = CGPoint(x: 0, y: 2)
+            node.addChild(sheen)
+            // Theme accent at the elbow: valve wheel, frost cap, gutter lip.
+            switch theme {
+            case .kitchen, .boiler:
+                let wheel = SKShapeNode(circleOfRadius: 8)
+                wheel.strokeColor = accent
+                wheel.lineWidth = 2.5
+                wheel.fillColor = .clear
+                wheel.position = CGPoint(x: spawn.x - (fromLeft ? 26 : -26), y: y + 10)
+                let spoke = SKShapeNode(rectOf: CGSize(width: 2, height: 16))
+                spoke.fillColor = accent
+                spoke.strokeColor = .clear
+                wheel.addChild(spoke)
+                node.addChild(wheel)
+            case .freezer:
+                let frost = SKShapeNode(circleOfRadius: 7)
+                frost.fillColor = UIColor.white.withAlphaComponent(0.8)
+                frost.strokeColor = .clear
+                frost.glowWidth = 3
+                frost.position = CGPoint(x: spawn.x, y: y - 6)
+                node.addChild(frost)
+            case .rooftop:
+                let lip = SKShapeNode(rectOf: CGSize(width: 16, height: 10), cornerRadius: 2)
+                lip.fillColor = pipeColor
+                lip.strokeColor = accent
+                lip.lineWidth = 1
+                lip.position = CGPoint(x: spawn.x, y: y - 8)
+                node.addChild(lip)
+            case .greenhouse:
+                let nozzle = SKShapeNode(rectOf: CGSize(width: 8, height: 12), cornerRadius: 2)
+                nozzle.fillColor = accent
+                nozzle.strokeColor = .clear
+                nozzle.position = CGPoint(x: spawn.x, y: y - 12)
+                node.addChild(nozzle)
+            }
+            let drip = dripEmitter()
+            drip.position = CGPoint(x: spawn.x, y: y - 16)
+            node.addChild(drip)
+        }
+        return node
     }
 
     // MARK: - Diorama: night kitchen (abyss)
