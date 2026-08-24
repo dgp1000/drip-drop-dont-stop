@@ -26,6 +26,7 @@ enum Medal: CaseIterable {
 struct MenuView: View {
     @ObservedObject var model: GameModel
     @State private var breathing = false
+    @State private var showSecrets = false
 
     var body: some View {
         ZStack {
@@ -94,9 +95,19 @@ struct MenuView: View {
                 Text("Starting at level 1 counts toward your best run.")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
-                    .padding(.bottom, 10)
+
+                Button {
+                    showSecrets = true
+                } label: {
+                    Label("SECRETS", systemImage: "moon.stars.fill")
+                        .font(.system(size: 10, weight: .bold))
+                        .tracking(2)
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+                .padding(.bottom, 10)
             }
         }
+        .sheet(isPresented: $showSecrets) { SecretsCard() }
     }
 
     /// Gold/silver/bronze counts across all levels. Hidden until the
@@ -119,6 +130,60 @@ struct MenuView: View {
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+/// The magic paths, spelled out. The darkness freeze and the real-breath
+/// updraft are the app's best party tricks and were previously completely
+/// undiscoverable — this card is the map to them, worded to preserve a
+/// little of the mystery.
+private struct SecretsCard: View {
+    var body: some View {
+        ZStack {
+            LinearGradient(colors: [Color(red: 0.08, green: 0.10, blue: 0.20),
+                                    Color(red: 0.02, green: 0.04, blue: 0.08)],
+                           startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
+            VStack(alignment: .leading, spacing: 22) {
+                Label("SECRETS", systemImage: "moon.stars.fill")
+                    .font(.system(.headline, design: .rounded).weight(.black))
+                    .tracking(4)
+                    .foregroundStyle(.cyan)
+                    .frame(maxWidth: .infinity)
+
+                secret(icon: "lightbulb.slash.fill",
+                       title: "The dark freezes.",
+                       body: "Kill the lights — or cup a hand over the top of the phone — and the droplet ices over on its own. (Auto-brightness must be on; the ❄ button always works.)")
+                secret(icon: "wind",
+                       title: "Breath is real.",
+                       body: "The mic hears a genuine blow. Touch-and-hold is only the understudy — a real puff of air is the true updraft.")
+                secret(icon: "rosette",
+                       title: "Nightfall.",
+                       body: "A hidden Game Center badge waits for anyone the darkness has frozen.")
+
+                Spacer()
+            }
+            .padding(28)
+        }
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func secret(icon: String, title: String, body text: String) -> some View {
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.cyan)
+                .frame(width: 26)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.callout.weight(.bold))
+                    .foregroundStyle(.white)
+                Text(text)
+                    .font(.footnote)
+                    .foregroundStyle(.white.opacity(0.65))
             }
         }
     }

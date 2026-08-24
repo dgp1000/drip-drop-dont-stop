@@ -281,3 +281,24 @@ displayVersion 1.0, all-original audio (no licensing issues). To ship a build:
 - Steam as a third phase (warmth/holding the phone? or just a pickup).
 - Metaball rendering for a properly gooey droplet (SKEffectNode or a shader).
 - Real level art direction: dioramas — kitchen counters, gutters, greenhouses.
+
+## 1.2 (in progress, branch: main)
+
+- **Ice-clock tuning debt paid**: per-level `iceDuration` for the long
+  mandatory skates — Switchback 14 s; Rising Water, Cold Storage, The
+  Long Pour, Cold Service 12 s. Air budgets and pars deliberately left
+  alone pending real-run data.
+- **Medals**: gold/silver/bronze per level on the menu rows plus a tally.
+  One global threshold set works everywhere because the pot decays
+  normalized by par: gold ≥ 525 (par or better), silver ≥ 290 (~1.5×
+  par), bronze = finished.
+- **Ambience**: a looping cave bed (`ambience.wav`) with phase layers —
+  crystalline shimmer as ice, soft hiss as steam (`Ambience.swift`).
+  Loops are procedurally generated, seamless, and deliberately quiet:
+  the blow detector reads raw RMS, so a loud bed could read as breath.
+- **Achievements**: five badges in `GameCenter.swift` (First Drop,
+  Quickdrop, Dont Stop, Midas Drip with progress %, hidden Nightfall for
+  the darkness freeze). ASC setup required: create the five IDs under
+  App → Services → Game Center, or the reports just log and no-op.
+- **Secrets card**: the menu's SECRETS button finally maps the magic
+  paths (darkness freeze, real breath) — they were undiscoverable.
