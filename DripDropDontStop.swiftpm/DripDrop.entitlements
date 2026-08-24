@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<!-- .swiftpm app packages can't declare entitlements in Package.swift, and
+     Game Center formally requires com.apple.developer.game-center. This file
+     is injected at archive time via the CODE_SIGN_ENTITLEMENTS build setting
+     (see README: the archive command) — Xcode's own UI never reads it. -->
+<dict>
+    <key>com.apple.developer.game-center</key>
+    <true/>
+</dict>
+</plist>
