@@ -236,7 +236,7 @@ private struct LevelRow: View {
     /// Which verbs this level offers, at a glance.
     private var verbIcons: some View {
         HStack(spacing: 5) {
-            if level.blowAllowed { Image(systemName: "wind") }
+            if level.blowAllowed { Image(systemName: "hand.tap.fill") }
             if level.inkBudget > 0 { Image(systemName: "pencil.tip") }
             if level.steamAllowed { Image(systemName: "cloud.fill") }
             if !level.movers.isEmpty { Image(systemName: "arrow.up.arrow.down") }

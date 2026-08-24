@@ -104,7 +104,7 @@ struct GameView: View {
 
                     if model.blowAllowed {
                     VStack(alignment: .leading, spacing: 3) {
-                        Label("LIFT", systemImage: "wind")
+                        Label("LIFT", systemImage: "hand.tap.fill")
                             .font(.system(size: 9, weight: .bold))
                             .tracking(1.5)
                             .foregroundStyle(.white.opacity(0.5))

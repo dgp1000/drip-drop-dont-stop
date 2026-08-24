@@ -142,7 +142,7 @@ enum Levels {
               ],
               par: 9),
         Level(name: "Updraft",
-              hint: "HOLD the screen (or blow on the mic) to ride the updraft over the wall — the LIFT bar is your air supply. Empty means restart.",
+              hint: "TAP AND HOLD the screen to ride the updraft over the wall — the LIFT bar is your air supply. Empty means restart.",
               spawn: CGPoint(x: 0.15, y: 0.25),
               walls: [
                   CGRect(x: 0.47, y: 0.00, width: 0.06, height: 0.40),
@@ -207,7 +207,7 @@ enum Levels {
               par: 20,
               mood: .frost),
         Level(name: "The Chimney",
-              hint: "BLOW in short breaths to climb. Rest on the shelves — but land clear of the slatted patches.",
+              hint: "TAP in short bursts to climb. Rest on the shelves — but land clear of the slatted patches.",
               spawn: CGPoint(x: 0.80, y: 0.08),
               walls: [
                   CGRect(x: 0.00, y: 0.30, width: 0.55, height: 0.03),
@@ -225,7 +225,7 @@ enum Levels {
               mood: .warm,
               liftBudget: 3),       // the long climb gets a deeper lung
         Level(name: "Boost Slide",
-              hint: "FREEZE, tilt to skate, and BLOW quick puffs to hop the bump and the pit. Stay LOW — icicles above.",
+              hint: "FREEZE, tilt to skate, and TAP quick bursts to hop the bump and the pit. Stay LOW — icicles above.",
               spawn: CGPoint(x: 0.07, y: 0.10),
               walls: [
                   CGRect(x: 0.38, y: 0.00, width: 0.05, height: 0.08),   // the bump
@@ -243,7 +243,7 @@ enum Levels {
         // pit — it belongs to the lift set (missed in the first
         // blowAllowed audit; David found it unwinnable without lift).
         Level(name: "Switchback",
-              hint: "FREEZE early — grates on every storey. Work right, drop, work LEFT and PUFF over the pit mid-slide, then skate home.",
+              hint: "FREEZE early — grates on every storey. Work right, drop, work LEFT and TAP over the pit mid-slide, then skate home.",
               spawn: CGPoint(x: 0.06, y: 0.90),
               walls: [
                   CGRect(x: 0.00, y: 0.70, width: 0.75, height: 0.03),
@@ -262,7 +262,7 @@ enum Levels {
               // that isn't the level's point.
               iceDuration: 14),
         Level(name: "Meltpoint",
-              hint: "FREEZE for the grates, puff the pit — then MELT mid-air to drop short of the far drain. Ice flies; water falls.",
+              hint: "FREEZE for the grates, tap over the pit — then MELT mid-air to drop short of the far drain. Ice flies; water falls.",
               spawn: CGPoint(x: 0.06, y: 0.90),
               walls: [],
               zones: [
@@ -278,7 +278,7 @@ enum Levels {
         // One way only: no blowing, all-grate floor. Freeze mid-fall, board
         // the (narrow, fast) lift when it's low, ride up, roll off right.
         Level(name: "Rising Water",
-              hint: "No breath in here, and the whole floor is a grate: FREEZE before you land, board the lift LOW, ride it up, roll off at the top.",
+              hint: "No lift in here, and the whole floor is a grate: FREEZE before you land, board the lift LOW, ride it up, roll off at the top.",
               spawn: CGPoint(x: 0.08, y: 0.88),
               walls: [
                   CGRect(x: 0.74, y: 0.62, width: 0.24, height: 0.03),   // top ledge
@@ -303,7 +303,7 @@ enum Levels {
         // leap onto it from the mid shelf as it passes, ride DOWN, and puff
         // LOW back across the gap. Icicles over the goal punish high hops.
         Level(name: "Cold Storage",
-              hint: "FREEZE before you land — shelves are slatted. Leap from the mid shelf onto the passing lift, ride DOWN, and puff LOW across the gap. Icicles hang over the goal.",
+              hint: "FREEZE before you land — shelves are slatted. Leap from the mid shelf onto the passing lift, ride DOWN, and tap LOW across the gap. Icicles hang over the goal.",
               spawn: CGPoint(x: 0.08, y: 0.86),
               walls: [
                   CGRect(x: 0.00, y: 0.80, width: 0.35, height: 0.03),   // top shelf
@@ -333,7 +333,7 @@ enum Levels {
         // the sole entry is the hop from the lift's apex. Ink is cut to a
         // catch-slide's worth — it can no longer carve a road to the goal.
         Level(name: "The Long Pour",
-              hint: "DRAW a catch-slide as you fall (ink is tight), FREEZE on the perch, skate, puff the pit — the goal ledge is capped: enter from the lift side only.",
+              hint: "DRAW a catch-slide as you fall (ink is tight), FREEZE on the perch, skate, tap over the pit — the goal ledge is capped: enter from the lift side only.",
               spawn: CGPoint(x: 0.42, y: 0.92),
               walls: [
                   CGRect(x: 0.00, y: 0.30, width: 0.25, height: 0.03),   // the perch
@@ -504,7 +504,7 @@ enum Levels {
               blowAllowed: false,
               mood: .abyss),
         Level(name: "Threadneedle",
-              hint: "One breathless burst: STEAM up the LEFT gap, then lean HARD right the whole climb — thread the top gap before you condense.",
+              hint: "One burst is all you get: STEAM up the LEFT gap, then lean HARD right the whole climb — thread the top gap before you condense.",
               spawn: CGPoint(x: 0.10, y: 0.15),
               walls: [
                   CGRect(x: 0.04, y: 0.08, width: 0.14, height: 0.03),   // spawn shelf
