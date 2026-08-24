@@ -256,7 +256,11 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.02, y: 0.015, width: 0.12, height: 0.05), kind: .goal),
               ],
               par: 24,
-              blowAllowed: true),
+              blowAllowed: true,
+              // Three storeys of mandatory skating with grates on every
+              // one — the default 8 s forces a mid-route refreeze fiddle
+              // that isn't the level's point.
+              iceDuration: 14),
         Level(name: "Meltpoint",
               hint: "FREEZE for the grates, puff the pit — then MELT mid-air to drop short of the far drain. Ice flies; water falls.",
               spawn: CGPoint(x: 0.06, y: 0.90),
@@ -289,7 +293,11 @@ enum Levels {
                         travel: CGVector(dx: 0, dy: 0.34), period: 4.2),
               ],
               par: 18,
-              blowAllowed: false),
+              blowAllowed: false,
+              // Freeze happens mid-fall, then up to a full 4.2 s lift
+              // cycle waiting on the all-grate floor plus the ride — the
+              // worst case brushes the default 8 s clock.
+              iceDuration: 12),
         // One way only: the mid shelf no longer overhangs the lower shelf
         // (a direct drop lands in the drain), so the lift is mandatory —
         // leap onto it from the mid shelf as it passes, ride DOWN, and puff
@@ -316,7 +324,11 @@ enum Levels {
               ],
               par: 26,
               blowAllowed: true,
-              mood: .frost),
+              mood: .frost,
+              // Slatted shelves are lethal to melt on, and boarding the
+              // 4.5 s-period lift means standing on one while it comes
+              // around.
+              iceDuration: 12),
         // One way only: the goal ledge is capped (ceiling + side wall), so
         // the sole entry is the hop from the lift's apex. Ink is cut to a
         // catch-slide's worth — it can no longer carve a road to the goal.
@@ -343,7 +355,10 @@ enum Levels {
               inkBudget: 160,
               par: 34,
               blowAllowed: true,
-              mood: .storm),
+              mood: .storm,
+              // Grate skate + puff + waiting out the 5 s lift period while
+              // standing on grates: the worst-case ice window is ~11 s.
+              iceDuration: 12),
         // MARK: v1.1 — the steam levels. STEAM rises as vapor, drifts with
         // reduced tilt authority, ignores floor drains and grates, dies to
         // icicles, can't enter the basin, and condenses back to water after
@@ -535,7 +550,11 @@ enum Levels {
               inkBudget: 220,
               par: 30,
               blowAllowed: false,
-              mood: .frost),
+              mood: .frost,
+              // README-flagged long skate: melting mid-bridge over the
+              // all-grate floor is death, and the carve happens first —
+              // give the skate home an honest window.
+              iceDuration: 12),
     ]
 }
 
