@@ -1,5 +1,28 @@
 import SwiftUI
 
+/// Medals for a level's banked best. One set of thresholds serves every
+/// level because the pot decays normalized by par — 1000 at the gun, 525
+/// at par, 50 at 2× par — so gold means "par or better" everywhere,
+/// silver means inside ~1.5× par, bronze means finished at all.
+enum Medal: CaseIterable {
+    case gold, silver, bronze
+
+    init?(best: Int) {
+        if best >= 525 { self = .gold }
+        else if best >= 290 { self = .silver }
+        else if best > 0 { self = .bronze }
+        else { return nil }
+    }
+
+    var color: Color {
+        switch self {
+        case .gold:   return Color(red: 1.00, green: 0.80, blue: 0.25)
+        case .silver: return Color(red: 0.80, green: 0.84, blue: 0.90)
+        case .bronze: return Color(red: 0.80, green: 0.52, blue: 0.28)
+        }
+    }
+}
+
 struct MenuView: View {
     @ObservedObject var model: GameModel
     @State private var breathing = false
@@ -39,6 +62,7 @@ struct MenuView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                medalTally
 
                 ScrollView {
                     VStack(spacing: 10) {
@@ -74,6 +98,30 @@ struct MenuView: View {
             }
         }
     }
+
+    /// Gold/silver/bronze counts across all levels. Hidden until the
+    /// first medal exists — the empty state shouldn't advertise a system
+    /// the player hasn't met yet.
+    @ViewBuilder private var medalTally: some View {
+        let earned = model.bestScores.compactMap(Medal.init)
+        if !earned.isEmpty {
+            HStack(spacing: 12) {
+                ForEach(Array(Medal.allCases.enumerated()), id: \.offset) { _, medal in
+                    let n = earned.filter { $0 == medal }.count
+                    if n > 0 {
+                        HStack(spacing: 3) {
+                            Image(systemName: "medal.fill")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(medal.color)
+                            Text("\(n)")
+                                .font(.system(.caption2, design: .monospaced).weight(.bold))
+                                .foregroundStyle(.white.opacity(0.7))
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 private struct LevelRow: View {
@@ -99,6 +147,12 @@ private struct LevelRow: View {
                 }
             }
             Spacer()
+            if let medal = Medal(best: best) {
+                Image(systemName: "medal.fill")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(medal.color)
+                    .shadow(color: medal.color.opacity(0.6), radius: 3)
+            }
             VStack(alignment: .trailing, spacing: 2) {
                 Text(best > 0 ? "\(best)" : "—")
                     .font(.system(.body, design: .monospaced).weight(.bold))
