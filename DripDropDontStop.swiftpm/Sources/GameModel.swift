@@ -12,7 +12,9 @@ final class GameModel: ObservableObject {
     @Published var levelNumber = 1
     @Published var levelName = ""
     @Published var hint = ""
-    @Published var phase: Phase = .water
+    @Published var phase: Phase = .water {
+        didSet { Ambience.shared.set(phase: phase) }
+    }
     @Published var steamAllowed = false
     @Published var blowAllowed = true
     /// Whether the mic is delivering breath input (informational — holds
@@ -136,6 +138,9 @@ final class GameModel: ObservableObject {
             GameCenter.shared.setAccessPoint(visible: self?.screen == .menu)
         }
         UIApplication.shared.isIdleTimerDisabled = true
+        // After the blow detector has claimed the audio session — the
+        // ambience joins the session, it must not configure one.
+        Ambience.shared.start()
 
         // Darkness freezes the droplet. iOS has no public ambient-light API,
         // so we use auto-brightness as a proxy: with auto-brightness on,
