@@ -282,6 +282,25 @@ displayVersion 1.0, all-original audio (no licensing issues). To ship a build:
 - Metaball rendering for a properly gooey droplet (SKEffectNode or a shader).
 - Real level art direction: dioramas — kitchen counters, gutters, greenhouses.
 
+## Archiving for the App Store (1.2+)
+
+`.swiftpm` packages can't declare entitlements, and Game Center needs
+`com.apple.developer.game-center` — so archive from the CLI and inject
+`DripDrop.entitlements` (requires the Game Center capability on the App
+ID, enabled 24 Aug 2026). Archiving from Xcode's GUI will NOT include
+the entitlement:
+
+```sh
+cd DripDropDontStop.swiftpm
+xcodebuild archive -scheme "Drip Drop Dont Stop" \
+  -destination 'generic/platform=iOS' -archivePath /tmp/ddd.xcarchive \
+  -allowProvisioningUpdates \
+  CODE_SIGN_ENTITLEMENTS="$PWD/DripDrop.entitlements"
+xcodebuild -exportArchive -archivePath /tmp/ddd.xcarchive \
+  -exportOptionsPlist exportOptions.plist -exportPath /tmp/dddexport \
+  -allowProvisioningUpdates   # method app-store-connect, destination upload
+```
+
 ## 1.2 (in progress, branch: main)
 
 - **Ice-clock tuning debt paid**: per-level `iceDuration` for the long
