@@ -18,6 +18,24 @@ final class GameCenter {
     static let leaderboardID = "dripdrop.bestrun"
     private(set) var available = false
 
+    /// Achievements. Every ID must exist in ASC (App → Services → Game
+    /// Center → Achievements) or the submit just logs and no-ops:
+    ///   dripdrop.firstbasin — "First Drop"   — bank any level
+    ///   dripdrop.underpar   — "Quickdrop"    — bank a level at par or better
+    ///   dripdrop.honestrun  — "Dont Stop"    — finish a full run from level 1
+    ///   dripdrop.allgold    — "Midas Drip"   — gold on every level (progress %)
+    ///   dripdrop.nightfall  — "Nightfall"    — freeze by real darkness (hidden!)
+    enum Achievement: String {
+        case firstBasin = "dripdrop.firstbasin"
+        case underPar = "dripdrop.underpar"
+        case honestRun = "dripdrop.honestrun"
+        case allGold = "dripdrop.allgold"
+        case nightfall = "dripdrop.nightfall"
+    }
+    /// Highest percent already reported this session — GC dedups
+    /// server-side, but there's no reason to spam it every bank.
+    private var reported: [Achievement: Double] = [:]
+
     func start(onChange: @escaping (Bool) -> Void) {
         GKLocalPlayer.local.authenticateHandler = { [weak self] viewController, error in
             guard let self else { return }
@@ -50,6 +68,23 @@ final class GameCenter {
                                   leaderboardIDs: [Self.leaderboardID]) { error in
             if let error {
                 NSLog("DripDrop GameCenter submit failed: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Report an achievement (optionally partial). Fire and forget, same
+    /// contract as the leaderboard: failures log, the game never notices.
+    func report(_ achievement: Achievement, percent: Double = 100) {
+        guard available else { return }
+        let pct = min(100, max(0, percent))
+        guard pct > (reported[achievement] ?? 0) else { return }
+        reported[achievement] = pct
+        let a = GKAchievement(identifier: achievement.rawValue)
+        a.percentComplete = pct
+        a.showsCompletionBanner = true
+        GKAchievement.report([a]) { error in
+            if let error {
+                NSLog("DripDrop GameCenter achievement failed: \(error.localizedDescription)")
             }
         }
     }

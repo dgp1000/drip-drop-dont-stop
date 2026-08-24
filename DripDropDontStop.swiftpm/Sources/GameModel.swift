@@ -112,6 +112,13 @@ final class GameModel: ObservableObject {
             bestScores[levelIndex] = banked
             UserDefaults.standard.set(banked, forKey: "dripdrop.best.\(levelIndex)")
         }
+        GameCenter.shared.report(.firstBasin)
+        // 525 = a par-or-better finish (the pot decays normalized by par —
+        // same math as the menu's gold medal).
+        if banked >= 525 { GameCenter.shared.report(.underPar) }
+        let golds = bestScores.filter { $0 >= 525 }.count
+        GameCenter.shared.report(.allGold,
+                                 percent: Double(golds) / Double(bestScores.count) * 100)
     }
 
     func runFinished() {
@@ -123,6 +130,7 @@ final class GameModel: ObservableObject {
             }
             // Honest runs go to the leaderboard (no-op if GC unavailable).
             GameCenter.shared.submitBestRun(totalScore)
+            GameCenter.shared.report(.honestRun)
         }
     }
 
@@ -152,6 +160,8 @@ final class GameModel: ObservableObject {
             if b < 0.08, self.phase == .water, !self.phaseLocked {
                 self.phase = .ice
                 self.autoFroze = true
+                // The hidden one: frozen by actual darkness.
+                GameCenter.shared.report(.nightfall)
             } else if b > 0.4, self.autoFroze {
                 if self.phase == .ice { self.phase = .water }
                 self.autoFroze = false
