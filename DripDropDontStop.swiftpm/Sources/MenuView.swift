@@ -284,6 +284,7 @@ private struct LevelRow: View {
             if level.inkBudget > 0 { Image(systemName: "pencil.tip") }
             if level.steamAllowed { Image(systemName: "cloud.fill") }
             if !level.movers.isEmpty { Image(systemName: "arrow.up.arrow.down") }
+            if !level.winds.isEmpty { Image(systemName: "wind") }
         }
         .font(.system(size: 9, weight: .semibold))
         .foregroundStyle(.white.opacity(0.45))
@@ -320,6 +321,10 @@ private struct LevelThumbnail: View {
                                 width: m.size.width, height: m.size.height)
                 ctx.fill(Path(roundedRect: rect(mr), cornerRadius: 1),
                          with: .color(.cyan.opacity(0.8)))
+            }
+            for w in level.winds {
+                ctx.fill(Path(roundedRect: rect(w.rect), cornerRadius: 2),
+                         with: .color(.mint.opacity(0.22)))
             }
             for z in level.zones {
                 let color: Color

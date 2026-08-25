@@ -81,6 +81,16 @@ struct Mover {
     var phase: Double = 0
 }
 
+/// A wind volume: a constant push on everything inside it (v1.3, THE
+/// GALEWORKS). Force is a mass-relative acceleration in the same units
+/// as liftStrength. Each phase feels it differently — vapor sails
+/// (1.7x), water is pushed (1.0x), ice mostly holds its line (0.45x) —
+/// so an updraft strong enough to float water lets ice sink through.
+struct Wind {
+    let rect: CGRect
+    let force: CGVector
+}
+
 struct Level {
     let name: String
     let hint: String
@@ -89,6 +99,7 @@ struct Level {
     let zones: [Zone]
     var ramps: [Ramp] = []
     var movers: [Mover] = []
+    var winds: [Wind] = []
     /// Carving ink for this level (stroke-length budget, points).
     /// 0 = no carving — early levels stay pure tests of their own verb,
     /// otherwise a drawn ramp is a skeleton key for everything.
@@ -127,6 +138,7 @@ enum Levels {
         ("STEAM", 13..<18),         // the third phase
         ("EXPERT", 18..<22),        // everything, one route each
         ("THE DEPTHS", 22..<30),    // combos the game hasn't demanded yet
+        ("THE GALEWORKS", 30..<38), // wind: a push each phase feels differently
     ]
 
     static let all: [Level] = [
@@ -729,6 +741,172 @@ enum Levels {
               blowAllowed: true,
               mood: .storm,
               iceDuration: 12),
+        // MARK: THE GALEWORKS (31-38) — 30→38 expansion, 25 Aug 2026.
+        // The wind tier: every level reads the phase factors (vapor 1.7x,
+        // water 1.0x, ice 0.45x). No lift budgets anywhere in the tier —
+        // wind IS the vertical verb here. Pars provisional; device
+        // playtest required, same as THE DEPTHS.
+        Level(name: "Tailwind",
+              hint: "The gale is a friend here: roll in and let it CARRY you over the pit. Tilt steers the landing.",
+              spawn: CGPoint(x: 0.08, y: 0.30),
+              walls: [
+                  CGRect(x: 0.02, y: 0.24, width: 0.14, height: 0.03),   // start shelf
+              ],
+              zones: [
+                  Zone(rect: CGRect(x: 0.84, y: 0.015, width: 0.13, height: 0.05), kind: .goal),
+                  Zone(rect: CGRect(x: 0.30, y: 0.00, width: 0.40, height: 0.035), kind: .drain),  // the pit
+              ],
+              winds: [
+                  Wind(rect: CGRect(x: 0.24, y: 0.00, width: 0.50, height: 0.45),
+                       force: CGVector(dx: 10, dy: 0)),
+              ],
+              par: 10,
+              mood: .storm),
+        Level(name: "Thermal",
+              hint: "Step into the thermal — warm air carries WATER upward. Tilt out at the top and land on the ledge.",
+              spawn: CGPoint(x: 0.10, y: 0.10),
+              walls: [
+                  CGRect(x: 0.62, y: 0.72, width: 0.20, height: 0.03),   // the ledge
+              ],
+              zones: [
+                  Zone(rect: CGRect(x: 0.66, y: 0.75, width: 0.12, height: 0.05), kind: .goal),
+                  Zone(rect: CGRect(x: 0.00, y: 0.78, width: 0.40, height: 0.04), kind: .drain),  // icicles left of the top
+              ],
+              winds: [
+                  Wind(rect: CGRect(x: 0.42, y: 0.03, width: 0.16, height: 0.72),
+                       force: CGVector(dx: 0, dy: 26)),
+              ],
+              par: 14,
+              mood: .warm),
+        // The counterpart lesson: the same updraft that floats water is
+        // too weak to hold ice. Freeze to sink.
+        Level(name: "Coldfall",
+              hint: "The shaft blows upward — water floats into the icicles. FREEZE and sink through the gale into the basin.",
+              spawn: CGPoint(x: 0.50, y: 0.90),
+              walls: [],
+              zones: [
+                  Zone(rect: CGRect(x: 0.44, y: 0.015, width: 0.14, height: 0.05), kind: .goal),
+                  Zone(rect: CGRect(x: 0.25, y: 0.88, width: 0.50, height: 0.04), kind: .drain),  // icicle ceiling over the shaft
+                  Zone(rect: CGRect(x: 0.00, y: 0.00, width: 0.44, height: 0.035), kind: .grate),
+                  Zone(rect: CGRect(x: 0.58, y: 0.00, width: 0.42, height: 0.035), kind: .grate),
+              ],
+              winds: [
+                  Wind(rect: CGRect(x: 0.25, y: 0.05, width: 0.50, height: 0.80),
+                       force: CGVector(dx: 0, dy: 26)),
+              ],
+              par: 12,
+              mood: .frost),
+        // Vapor at 1.7x in a 12-strength gale crosses the whole screen
+        // inside one fuse — the ride the ground route can't have.
+        Level(name: "Gale Rider",
+              hint: "STEAM into the high gale and ride it across — the curtain guards the ground. CONDENSE above the ledge and drop on.",
+              spawn: CGPoint(x: 0.08, y: 0.10),
+              walls: [
+                  CGRect(x: 0.80, y: 0.50, width: 0.18, height: 0.03),   // goal ledge
+              ],
+              zones: [
+                  Zone(rect: CGRect(x: 0.84, y: 0.53, width: 0.12, height: 0.05), kind: .goal),
+                  Zone(rect: CGRect(x: 0.47, y: 0.00, width: 0.06, height: 0.50), kind: .drain),  // the ice curtain
+                  Zone(rect: CGRect(x: 0.00, y: 0.84, width: 1.00, height: 0.04), kind: .drain),  // ceiling icicles
+              ],
+              winds: [
+                  Wind(rect: CGRect(x: 0.10, y: 0.62, width: 0.85, height: 0.18),
+                       force: CGVector(dx: 12, dy: 0)),
+              ],
+              par: 16,
+              steamAllowed: true,
+              mood: .mist),
+        // The headwind leans on the roll: a lazy carve stalls mid-gale.
+        Level(name: "Against the Grain",
+              hint: "A headwind leans on everything: DRAW your slide STEEP — a lazy line stalls mid-gale. The floor drinks what stalls.",
+              spawn: CGPoint(x: 0.10, y: 0.88),
+              walls: [
+                  CGRect(x: 0.82, y: 0.30, width: 0.16, height: 0.03),   // goal ledge
+              ],
+              zones: [
+                  Zone(rect: CGRect(x: 0.85, y: 0.33, width: 0.11, height: 0.05), kind: .goal),
+                  Zone(rect: CGRect(x: 0.00, y: 0.00, width: 1.00, height: 0.035), kind: .drain),
+              ],
+              winds: [
+                  Wind(rect: CGRect(x: 0.20, y: 0.15, width: 0.60, height: 0.55),
+                       force: CGVector(dx: -9, dy: 0)),
+              ],
+              inkBudget: 380,
+              par: 24,
+              mood: .abyss),
+        // Ice only feels 0.45x — but a whole runway of tailwind stacks
+        // speed no flat skate can reach, and ice has no speed cap.
+        Level(name: "Slipstream",
+              hint: "FREEZE and let the tailwind pile speed on — the pit is too wide for skating alone. Ride the slipstream and jump it.",
+              spawn: CGPoint(x: 0.06, y: 0.55),
+              walls: [
+                  CGRect(x: 0.00, y: 0.49, width: 0.12, height: 0.03),   // start shelf
+              ],
+              zones: [
+                  Zone(rect: CGRect(x: 0.86, y: 0.015, width: 0.12, height: 0.05), kind: .goal),
+                  Zone(rect: CGRect(x: 0.00, y: 0.00, width: 0.48, height: 0.035), kind: .grate),
+                  Zone(rect: CGRect(x: 0.48, y: 0.00, width: 0.30, height: 0.035), kind: .drain),  // the wide pit
+                  Zone(rect: CGRect(x: 0.78, y: 0.00, width: 0.22, height: 0.035), kind: .grate),
+                  Zone(rect: CGRect(x: 0.30, y: 0.60, width: 0.70, height: 0.04), kind: .drain),  // icicles: no flying it
+              ],
+              winds: [
+                  Wind(rect: CGRect(x: 0.06, y: 0.03, width: 0.40, height: 0.25),
+                       force: CGVector(dx: 11, dy: 0)),
+              ],
+              par: 14,
+              mood: .frost,
+              iceDuration: 10),
+        // Kettle Drum with thermals instead of steam: pure wind reading,
+        // no phase buttons needed at all.
+        Level(name: "Organ Pipes",
+              hint: "Three pipes of rising air, each taller than the last. Ride up, tilt across the gap, and catch the next pipe before the floor.",
+              spawn: CGPoint(x: 0.13, y: 0.10),
+              walls: [
+                  CGRect(x: 0.84, y: 0.76, width: 0.16, height: 0.03),   // goal ledge
+              ],
+              zones: [
+                  Zone(rect: CGRect(x: 0.87, y: 0.79, width: 0.11, height: 0.045), kind: .goal),
+                  Zone(rect: CGRect(x: 0.00, y: 0.00, width: 1.00, height: 0.035), kind: .grate),
+                  Zone(rect: CGRect(x: 0.20, y: 0.68, width: 0.23, height: 0.04), kind: .drain),  // icicles over gap 1
+                  Zone(rect: CGRect(x: 0.57, y: 0.76, width: 0.23, height: 0.04), kind: .drain),  // icicles over gap 2
+              ],
+              winds: [
+                  Wind(rect: CGRect(x: 0.06, y: 0.03, width: 0.14, height: 0.60),
+                       force: CGVector(dx: 0, dy: 26)),
+                  Wind(rect: CGRect(x: 0.43, y: 0.03, width: 0.14, height: 0.68),
+                       force: CGVector(dx: 0, dy: 26)),
+                  Wind(rect: CGRect(x: 0.80, y: 0.03, width: 0.14, height: 0.76),
+                       force: CGVector(dx: 0, dy: 26)),
+              ],
+              par: 20,
+              mood: .mist),
+        // The capstone: sink a shaft, ride a slipstream, sail a gale.
+        Level(name: "The Galeworks",
+              hint: "Everything the gales taught: FREEZE to sink the shaft, ride the slipstream over the pit, then STEAM into the high wind and sail LEFT to the shelf.",
+              spawn: CGPoint(x: 0.30, y: 0.92),
+              walls: [
+                  CGRect(x: 0.06, y: 0.70, width: 0.20, height: 0.03),   // goal shelf
+              ],
+              zones: [
+                  Zone(rect: CGRect(x: 0.10, y: 0.73, width: 0.13, height: 0.05), kind: .goal),
+                  Zone(rect: CGRect(x: 0.16, y: 0.92, width: 0.28, height: 0.04), kind: .drain),  // icicles cap the shaft
+                  Zone(rect: CGRect(x: 0.00, y: 0.00, width: 0.70, height: 0.035), kind: .grate),
+                  Zone(rect: CGRect(x: 0.70, y: 0.00, width: 0.10, height: 0.035), kind: .drain),  // the pit
+                  Zone(rect: CGRect(x: 0.30, y: 0.45, width: 0.45, height: 0.04), kind: .drain),  // icicles: rise on the right only
+                  Zone(rect: CGRect(x: 0.00, y: 0.86, width: 1.00, height: 0.04), kind: .drain),  // ceiling icicles
+              ],
+              winds: [
+                  Wind(rect: CGRect(x: 0.16, y: 0.30, width: 0.28, height: 0.60),
+                       force: CGVector(dx: 0, dy: 26)),                  // the shaft
+                  Wind(rect: CGRect(x: 0.02, y: 0.03, width: 0.55, height: 0.20),
+                       force: CGVector(dx: 10, dy: 0)),                  // the slipstream
+                  Wind(rect: CGRect(x: 0.30, y: 0.60, width: 0.65, height: 0.16),
+                       force: CGVector(dx: -11, dy: 0)),                 // the high gale, blowing home
+              ],
+              par: 30,
+              steamAllowed: true,
+              mood: .storm,
+              iceDuration: 12),
     ]
 }
 
@@ -789,6 +967,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     /// `elevated` marks drains that render as icicles — the one hazard that
     /// still kills vapor (cold condenses it dead).
     private var zoneRects: [(kind: ZoneKind, rect: CGRect, elevated: Bool)] = []
+    private var windZones: [(rect: CGRect, force: CGVector)] = []
     private var levelStartTime: TimeInterval = 0
 
     private enum RunState { case countdown, playing }
@@ -946,6 +1125,8 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
              elevated: $0.kind == .drain && $0.rect.minY > 0.06)
         }
         for z in level.zones { addZone(z) }
+        windZones = level.winds.map { (rect: rect($0.rect), force: $0.force) }
+        for w in level.winds { addWind(w) }
         spawnDroplet(at: point(level.spawn))
         applyPhase()
         transitioning = false
@@ -992,6 +1173,42 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     /// ↺ and death both restart instantly — the briefing only fronts a
     /// level you arrived at fresh from the menu.
     func reloadCurrent() { loadLevel(levelIndex, skipCountdown: true) }
+
+    /// Wind made visible: faint streaks drifting with the gale, respawning
+    /// at random spots inside the volume. Purely decorative — the force
+    /// lives in update().
+    private func addWind(_ w: Wind) {
+        let r = rect(w.rect)
+        let len = hypot(w.force.dx, w.force.dy)
+        guard len > 0 else { return }
+        let ux = w.force.dx / len, uy = w.force.dy / len
+        let node = SKNode()
+        node.zPosition = 3
+        for i in 0..<14 {
+            let streak = SKShapeNode(rectOf: CGSize(width: 13, height: 2), cornerRadius: 1)
+            streak.fillColor = UIColor(red: 0.75, green: 0.95, blue: 1, alpha: 0.3)
+            streak.strokeColor = .clear
+            streak.zRotation = atan2(uy, ux)
+            func randomPoint() -> CGPoint {
+                CGPoint(x: r.minX + .random(in: 0...r.width),
+                        y: r.minY + .random(in: 0...r.height))
+            }
+            streak.position = randomPoint()
+            streak.alpha = 0
+            let travel: CGFloat = 80
+            let cycle = SKAction.sequence([
+                .group([.fadeAlpha(to: 0.8, duration: 0.25),
+                        .moveBy(x: ux * travel * 0.4, y: uy * travel * 0.4, duration: 0.35)]),
+                .group([.fadeOut(withDuration: 0.4),
+                        .moveBy(x: ux * travel * 0.6, y: uy * travel * 0.6, duration: 0.45)]),
+                .run { [weak streak] in streak?.position = randomPoint() },
+            ])
+            streak.run(.sequence([.wait(forDuration: Double(i) * 0.09),
+                                  .repeatForever(cycle)]))
+            node.addChild(streak)
+        }
+        addChild(node)
+    }
 
     private func addWall(_ r: CGRect) {
         let node = Decor.slab(rect: r)
@@ -1266,6 +1483,24 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
             let accel = lift * (pullDown + liftStrength) * pointsPerMeter
             if body.velocity.dy < maxRiseSpeed {
                 body.applyForce(CGVector(dx: 0, dy: body.mass * accel))
+            }
+        }
+
+        // Environmental winds: constant mass-relative push, felt by each
+        // phase differently — vapor sails, water is pushed, ice mostly
+        // holds its line. An updraft that floats water lets ice sink.
+        if !windZones.isEmpty {
+            let windFactor: CGFloat
+            switch model.phase {
+            case .ice:   windFactor = 0.45
+            case .steam: windFactor = 1.7
+            case .water: windFactor = 1.0
+            }
+            let pos = droplet.position
+            for w in windZones where w.rect.contains(pos) {
+                body.applyForce(CGVector(
+                    dx: body.mass * w.force.dx * windFactor * pointsPerMeter,
+                    dy: body.mass * w.force.dy * windFactor * pointsPerMeter))
             }
         }
 

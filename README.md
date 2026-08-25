@@ -330,6 +330,12 @@ xcodebuild -exportArchive -archivePath /tmp/ddd.xcarchive \
   copy, permission asked on the first banked basin).
 - Old-people-proof pass: progressive level unlock (completed + next
   only), labeled orange Restart, 58pt gradient FREEZE/STEAM buttons.
+- THE GALEWORKS: levels 31–38 on a new mechanic — wind volumes
+  (`Level.winds`): mass-relative push each phase feels differently
+  (vapor 1.7×, water 1.0×, ice 0.45×), so updrafts float water but let
+  ice sink, tailwinds boost skate jumps, and vapor rides high gales
+  across the screen. No lift budgets in the tier — wind is the
+  vertical verb.
 - **Death IS a restart now**: same full reset as ↺ (air, ink, pot,
   phase), minus the countdown. Supersedes the old rules "death does not
   refill the air supply" and "ice survives a death" — there is no
