@@ -110,35 +110,63 @@ struct GameView: View {
             .padding(.top, 8)
             .padding(.bottom, 14)
 
+            if model.briefing { briefingCard }
+
             if let phase = model.countdown {
-                VStack(spacing: 22) {
-                    Text(phase)
-                        .font(.system(size: phase == "GO!" ? 72 : 52,
-                                      weight: .black, design: .rounded))
-                        .foregroundStyle(phase == "GO!" ? Color.green : Color.orange)
-                        .shadow(color: .black.opacity(0.6), radius: 8, y: 3)
-                        .id(phase)
-                        .transition(.scale(scale: 1.6).combined(with: .opacity))
-                    if phase != "GO!" {
-                        Text(model.hint)
-                            .font(.callout.weight(.medium))
-                            .foregroundStyle(.white)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
-                            .padding(.horizontal, 34)
-                            .transition(.opacity)
-                    }
-                }
+                Text(phase)
+                    .font(.system(size: 72, weight: .black, design: .rounded))
+                    .foregroundStyle(Color.green)
+                    .shadow(color: .black.opacity(0.6), radius: 8, y: 3)
+                    .id(phase)
+                    .transition(.scale(scale: 1.6).combined(with: .opacity))
             }
 
             if model.finished { finishOverlay }
         }
         .animation(.spring(duration: 0.3), value: model.countdown)
+        .animation(.spring(duration: 0.35), value: model.briefing)
         #if targetEnvironment(simulator)
         .modifier(SimTiltKeys(model: model))
         #endif
+    }
+
+    /// The pre-level briefing: name, hint, START. Sits on screen for as
+    /// long as the player wants — the level clock doesn't run until the
+    /// tap. Death restarts and ↺ skip it.
+    private var briefingCard: some View {
+        VStack(spacing: 18) {
+            Text("LEVEL \(model.levelNumber)")
+                .font(.system(.caption, design: .rounded).weight(.black))
+                .tracking(3)
+                .foregroundStyle(.cyan)
+            Text(model.levelName)
+                .font(.system(.title, design: .rounded).weight(.black))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+            Text(model.hint)
+                .font(.body.weight(.medium))
+                .foregroundStyle(.white.opacity(0.85))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            Button {
+                model.beginLevel()
+            } label: {
+                Label("START", systemImage: "play.fill")
+                    .font(.system(size: 22, weight: .black, design: .rounded))
+                    .tracking(2)
+                    .foregroundStyle(.black)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 58)
+                    .background(Color.cyan, in: RoundedRectangle(cornerRadius: 18))
+                    .shadow(color: .cyan.opacity(0.5), radius: 10, y: 2)
+            }
+            .padding(.top, 6)
+        }
+        .padding(26)
+        .frame(maxWidth: 420)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24))
+        .padding(.horizontal, 30)
+        .transition(.scale(scale: 0.92).combined(with: .opacity))
     }
 
     /// A big, unmistakable phase button: chunky icon, loud label,

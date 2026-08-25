@@ -639,21 +639,26 @@ enum Levels {
               blowAllowed: false,
               mood: .frost,
               iceDuration: 12),
-        // Stepping Stones stood the hops on their side; this stacks them:
-        // three offset gaps, three bursts, condense on the perch between.
+        // Stepping Stones stood the hops on their side; this stacks them.
+        // GEOMETRY LESSON (v1 was impossible): each burst gets almost no
+        // climb runway between bands, so a burst can do ONE gap plus one
+        // drift-and-fall — the next perch must sit under the next gap,
+        // offset by ~0.3 at most (Cold Front's device-proven ratio), and
+        // wide enough to catch a falling condense. v1 asked for a 0.6
+        // drift in a tenth of Threadneedle's runway.
         Level(name: "Kettle Drum",
-              hint: "Three fronts, three breaths of steam: up each gap, condense on the perch, wait out the recharge — the gaps never line up.",
+              hint: "Three fronts, three breaths: STEAM up each gap, drift, and CONDENSE to fall onto the next perch while it recharges. The gaps never line up.",
               spawn: CGPoint(x: 0.10, y: 0.08),
               walls: [
-                  CGRect(x: 0.05, y: 0.42, width: 0.16, height: 0.03),   // perch 1
-                  CGRect(x: 0.78, y: 0.67, width: 0.16, height: 0.03),   // perch 2
-                  CGRect(x: 0.04, y: 0.90, width: 0.18, height: 0.03),   // goal ledge
+                  CGRect(x: 0.44, y: 0.44, width: 0.28, height: 0.03),   // perch 1: under gap 2
+                  CGRect(x: 0.16, y: 0.68, width: 0.28, height: 0.03),   // perch 2: under gap 3
+                  CGRect(x: 0.02, y: 0.90, width: 0.28, height: 0.03),   // goal ledge
               ],
               zones: [
                   Zone(rect: CGRect(x: 0.08, y: 0.93, width: 0.12, height: 0.045), kind: .goal),
-                  Zone(rect: CGRect(x: 0.25, y: 0.30, width: 0.75, height: 0.04), kind: .drain),  // front 1: gap left
-                  Zone(rect: CGRect(x: 0.00, y: 0.55, width: 0.72, height: 0.04), kind: .drain),  // front 2: gap right
-                  Zone(rect: CGRect(x: 0.30, y: 0.80, width: 0.70, height: 0.04), kind: .drain),  // front 3: gap left
+                  Zone(rect: CGRect(x: 0.28, y: 0.30, width: 0.72, height: 0.04), kind: .drain),  // front 1: gap left
+                  Zone(rect: CGRect(x: 0.00, y: 0.55, width: 0.55, height: 0.04), kind: .drain),  // front 2: gap right
+                  Zone(rect: CGRect(x: 0.34, y: 0.80, width: 0.66, height: 0.04), kind: .drain),  // front 3: gap left
               ],
               par: 26,
               steamAllowed: true,
@@ -944,16 +949,14 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         spawnDroplet(at: point(level.spawn))
         applyPhase()
         transitioning = false
-        if skipCountdown { quickStart() } else { startCountdown() }
+        if skipCountdown { quickStart() } else { beginBriefing() }
     }
 
-    /// A death restart: the same full reset as ↺, minus the ceremony —
-    /// the player already knows the level; hand them the fresh attempt
-    /// immediately.
+    /// Start playing NOW: physics on, clocks running, buttons live.
+    /// Used by the briefing's START tap and by death restarts.
     private func quickStart() {
         runState = .playing
         model?.phaseLocked = false
-        model?.countdown = nil
         droplet.physicsBody?.isDynamic = true
         levelStartTime = CACurrentMediaTime()
         spawnMarker?.run(.sequence([.fadeOut(withDuration: 0.4),
@@ -961,44 +964,34 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         spawnMarker = nil
     }
 
-    /// Ready — Steady — Go! The droplet holds at spawn and the score clock
-    /// waits; play (and the drain) begins on GO.
-    private func startCountdown() {
+    /// The briefing replaces READY-STEADY-GO (old-people-proofing): the
+    /// level card sits on screen for as long as the player wants — name,
+    /// hint, a big START. The world holds its breath until the tap.
+    private func beginBriefing() {
         runState = .countdown
         model?.phaseLocked = true
+        model?.countdown = nil
         droplet.physicsBody?.isDynamic = false
+        model?.briefing = true
+    }
+
+    /// START tapped: flash GO! and hand over control.
+    func beginFromBriefing() {
+        model?.briefing = false
+        model?.countdown = "GO!"
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        sfx("go")
+        quickStart()
         removeAction(forKey: "countdown")
-        model?.countdown = "READY"
-        let tick = UIImpactFeedbackGenerator(style: .light)
-        tick.impactOccurred()
-        sfx("tick")
         run(.sequence([
-            .wait(forDuration: 1.6),        // reading time for the hint card
-            .run { [weak self] in
-                self?.model?.countdown = "STEADY"
-                tick.impactOccurred()
-                self?.sfx("tick")
-            },
-            .wait(forDuration: 0.9),
-            .run { [weak self] in
-                guard let self else { return }
-                self.model?.countdown = "GO!"
-                UINotificationFeedbackGenerator().notificationOccurred(.success)
-                self.sfx("go")
-                self.droplet.physicsBody?.isDynamic = true
-                self.levelStartTime = CACurrentMediaTime()
-                self.runState = .playing
-                self.model?.phaseLocked = false
-                self.spawnMarker?.run(.sequence([.fadeOut(withDuration: 0.4),
-                                                 .removeFromParent()]))
-                self.spawnMarker = nil
-            },
             .wait(forDuration: 0.6),
             .run { [weak self] in self?.model?.countdown = nil },
         ]), withKey: "countdown")
     }
 
-    func reloadCurrent() { loadLevel(levelIndex) }
+    /// ↺ and death both restart instantly — the briefing only fronts a
+    /// level you arrived at fresh from the menu.
+    func reloadCurrent() { loadLevel(levelIndex, skipCountdown: true) }
 
     private func addWall(_ r: CGRect) {
         let node = Decor.slab(rect: r)

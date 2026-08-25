@@ -45,9 +45,12 @@ final class GameModel: ObservableObject {
     @Published var micActive = false
     /// Remaining lift air supply, 1→0. Empty = no more lift; ↺ refills.
     @Published var liftFrac: CGFloat = 1
-    /// Phase buttons are locked until READY-STEADY-GO completes — now that
-    /// phases run on clocks, a countdown freeze would be a free head start.
+    /// Phase buttons are locked until the level actually starts — with
+    /// phases on clocks, a pre-start freeze would be a free head start.
     @Published var phaseLocked = true
+    /// The pre-level briefing card: level name + hint + START. Shown on
+    /// every fresh arrival from the menu; death restarts skip it.
+    @Published var briefing = false
     /// False during the post-condense recharge (scene-driven). The cooldown
     /// is what keeps steam a committed leap instead of a second hover verb.
     @Published var steamReady = true
@@ -101,8 +104,12 @@ final class GameModel: ObservableObject {
                                : args.contains("-steam") ? .steam : nil
             DispatchQueue.main.async { [weak self] in
                 self?.startGame(at: idx)
+                // The harness has no finger for the briefing's START.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    self?.beginLevel()
+                }
                 if let forced {
-                    // After the countdown finishes (phases are GO-locked).
+                    // After the start (phases are locked until then).
                     DispatchQueue.main.asyncAfter(deadline: .now() + 4.2) {
                         self?.phase = forced
                     }
@@ -213,6 +220,8 @@ final class GameModel: ObservableObject {
             phase = .steam
         }
     }
+
+    func beginLevel() { scene.beginFromBriefing() }
 
     func resetLevel() { scene.reloadCurrent() }
 
