@@ -343,7 +343,7 @@ xcodebuild -exportArchive -archivePath /tmp/ddd.xcarchive \
 
 ## Analytics (build 13+)
 
-Anonymous gameplay events post to Supabase (LogACog project, table
+Anonymous gameplay events post to Supabase (Bithash project — moved from LogACog, table
 `dripdrop_events`, insert-only publishable key — the API can't read).
 One per-install UUID, no identity. Events: `session_start`,
 `session_end` (duration, where they were), `level_result` (level,

@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drip Drop Live Ops</title>
+<style>
+  /* Dark-committed ops dashboard, palette per the dataviz reference. */
+  :root {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19;
+    --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --baseline: #383835;
+    --ring: rgba(255,255,255,0.10);
+    --blue: #3987e5; --orange: #d95926; --good: #0ca30c;
+  }
+  * { margin: 0; box-sizing: border-box; }
+  body {
+    background: var(--page); color: var(--ink);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 28px clamp(14px, 4vw, 48px) 60px;
+  }
+  header { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 22px; }
+  h1 { font-size: 19px; letter-spacing: 2.5px; font-weight: 800; }
+  h1 span { color: var(--blue); }
+  #live { font-size: 13px; color: var(--ink-2); display: flex; align-items: center; gap: 7px; }
+  #dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+  #dot.err { background: #d03b3b; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 26px; }
+  .tile { background: var(--surface); border: 1px solid var(--ring); border-radius: 12px; padding: 14px 16px; }
+  .tile .v { font-size: 28px; font-weight: 750; }
+  .tile .l { font-size: 12px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+  .card { background: var(--surface); border: 1px solid var(--ring); border-radius: 12px; padding: 18px 18px 12px; margin-bottom: 18px; }
+  .card h2 { font-size: 14px; font-weight: 700; color: var(--ink-2); margin-bottom: 2px; }
+  .card .sub { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+  .chart-wrap { overflow-x: auto; }
+  svg { display: block; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 13.5px; }
+  th { text-align: left; color: var(--muted); font-size: 11.5px; letter-spacing: 1px; text-transform: uppercase; font-weight: 650; padding: 6px 10px; border-bottom: 1px solid var(--baseline); }
+  td { padding: 6px 10px; border-bottom: 1px solid var(--grid); color: var(--ink-2); }
+  td.ok { color: var(--good); } td.no { color: var(--muted); }
+  #tip { position: fixed; pointer-events: none; background: #262624; border: 1px solid var(--ring);
+         border-radius: 8px; padding: 7px 10px; font-size: 12.5px; color: var(--ink);
+         opacity: 0; transition: opacity .12s; z-index: 10; max-width: 260px; }
+  #tip .t { font-weight: 700; } #tip .d { color: var(--ink-2); }
+  .empty { color: var(--muted); padding: 18px 4px 24px; font-size: 14px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>💧 DRIP DROP <span>LIVE OPS</span></h1>
+  <div id="live"><div id="dot"></div><span id="upd">connecting…</span></div>
+</header>
+
+<div class="tiles" id="tiles"></div>
+
+<div class="card">
+  <h2>Completion rate by level</h2>
+  <div class="sub">completed visits ÷ all visits · hover a bar for the level</div>
+  <div class="chart-wrap"><div id="c-completion"></div></div>
+</div>
+
+<div class="card">
+  <h2>Average deaths by level</h2>
+  <div class="sub">deaths per visit, completed or not — the difficulty curve</div>
+  <div class="chart-wrap"><div id="c-deaths"></div></div>
+</div>
+
+<div class="card">
+  <h2>Funnel — players who have completed each level</h2>
+  <div class="sub">where the bars fall is where players drop off</div>
+  <div class="chart-wrap"><div id="c-funnel"></div></div>
+</div>
+
+<div class="card">
+  <h2>Recent events</h2>
+  <div class="sub">latest 25, newest first</div>
+  <div id="recent"></div>
+</div>
+
+<div id="tip"></div>
+
+<script>
+const URL_ = "https://hdsnwuhbmbvrkjctrsbm.supabase.co/rest/v1/rpc/dripdrop_dashboard";
+const KEY = "sb_publishable_8yxzekSbGKHy9SK-HRJWYw_fH7-2KaQ";
+const TOKEN = "89dec9510a515bded988e56d1435d162";
+let lastFetch = 0;
+
+const fmtDur = s => { s = Math.round(s || 0);
+  if (s < 90) return s + "s";
+  if (s < 5400) return Math.round(s / 60) + "m";
+  return (s / 3600).toFixed(1) + "h"; };
+
+function tile(v, l) { return `<div class="tile"><div class="v">${v}</div><div class="l">${l}</div></div>`; }
+
+const tip = document.getElementById("tip");
+function showTip(e, html) {
+  tip.innerHTML = html; tip.style.opacity = 1;
+  const x = Math.min(e.clientX + 14, innerWidth - 270);
+  tip.style.left = x + "px"; tip.style.top = (e.clientY + 14) + "px";
+}
+function hideTip() { tip.style.opacity = 0; }
+
+// Single-series bar chart: thin marks, rounded data end, 2px gaps,
+// hairline grid, muted ticks, per-bar hover. Values direct-labeled only
+// when few bars; otherwise the tooltip carries them.
+function barChart(el, rows, { value, color, max, fmt = v => v, tipHTML }) {
+  const host = document.getElementById(el);
+  if (!rows.length) { host.innerHTML = '<div class="empty">No data yet — waiting for the first players.</div>'; return; }
+  const H = 190, padB = 22, padT = 14, gap = 2;
+  const bw = Math.max(10, Math.min(34, Math.floor(760 / rows.length) - gap));
+  const W = rows.length * (bw + gap) + 36;
+  const m = max ?? Math.max(...rows.map(value), 1);
+  const plotH = H - padB - padT;
+  const label = rows.length <= 14;
+  let s = `<svg width="${W}" height="${H}" role="img">`;
+  for (const g of [0.5, 1]) {
+    const y = padT + plotH * (1 - g);
+    s += `<line x1="30" x2="${W}" y1="${y}" y2="${y}" stroke="var(--grid)" stroke-width="1"/>`;
+    s += `<text x="26" y="${y + 4}" text-anchor="end" font-size="10" fill="var(--muted)">${fmt(m * g)}</text>`;
+  }
+  s += `<line x1="30" x2="${W}" y1="${H - padB}" y2="${H - padB}" stroke="var(--baseline)" stroke-width="1"/>`;
+  rows.forEach((r, i) => {
+    const v = value(r), h = Math.max(v > 0 ? 3 : 0, plotH * v / m);
+    const x = 34 + i * (bw + gap), y = H - padB - h;
+    s += `<path d="M${x},${H - padB} v${-Math.max(0, h - 4)} q0,-4 4,-4 h${bw - 8} q4,0 4,4 v${Math.max(0, h - 4)} z"
+           fill="${color}" data-i="${i}"/>`;
+    if (label && v > 0) s += `<text x="${x + bw / 2}" y="${y - 5}" text-anchor="middle" font-size="10.5" fill="var(--ink-2)">${fmt(v)}</text>`;
+    if (rows.length <= 14 || r.level_index % 5 === 0 || i === 0)
+      s += `<text x="${x + bw / 2}" y="${H - 7}" text-anchor="middle" font-size="10" fill="var(--muted)">${r.level_index}</text>`;
+    s += `<rect x="${x - gap / 2}" y="${padT}" width="${bw + gap}" height="${plotH}" fill="transparent" data-i="${i}"/>`;
+  });
+  s += `</svg>`;
+  host.innerHTML = s;
+  host.querySelectorAll("[data-i]").forEach(n => {
+    const r = rows[+n.dataset.i];
+    n.addEventListener("mousemove", e => showTip(e, tipHTML(r)));
+    n.addEventListener("mouseleave", hideTip);
+  });
+}
+
+async function refresh() {
+  try {
+    const res = await fetch(URL_, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: KEY, Authorization: "Bearer " + KEY },
+      body: JSON.stringify({ p_token: TOKEN }),
+    });
+    if (!res.ok) throw new Error(res.status);
+    const d = await res.json();
+    lastFetch = Date.now();
+    document.getElementById("dot").className = "";
+
+    const t = d.totals || {};
+    const eng = d.engagement || [];
+    const avgSess = eng.length ? eng.reduce((a, e) => a + (e.avg_session_seconds || 0), 0) / eng.length : 0;
+    document.getElementById("tiles").innerHTML =
+      tile(t.devices ?? 0, "players") + tile(t.sessions ?? 0, "sessions") +
+      tile(fmtDur(t.total_play_seconds), "total playtime") +
+      tile(fmtDur(avgSess), "avg session") +
+      tile(t.events_last_hour ?? 0, "events · last hour");
+
+    const diff = d.difficulty || [];
+    barChart("c-completion", diff, {
+      value: r => +r.completion_pct || 0, color: "var(--blue)", max: 100, fmt: v => Math.round(v) + "%",
+      tipHTML: r => `<div class="t">${r.level_index}. ${r.level_name}</div>
+        <div class="d">${r.completion_pct}% completed · ${r.visits} visits<br>
+        avg clear ${fmtDur(r.avg_clear_seconds)} · avg bank ${r.avg_banked ?? "—"}</div>`,
+    });
+    barChart("c-deaths", diff, {
+      value: r => +r.avg_deaths || 0, color: "var(--orange)", fmt: v => (+v).toFixed(1),
+      tipHTML: r => `<div class="t">${r.level_index}. ${r.level_name}</div>
+        <div class="d">${r.avg_deaths} deaths per visit · ${r.visits} visits</div>`,
+    });
+    barChart("c-funnel", d.funnel || [], {
+      value: r => r.players_completed || 0, color: "var(--blue)", fmt: v => Math.round(v),
+      tipHTML: r => `<div class="t">${r.level_index}. ${r.level_name}</div>
+        <div class="d">${r.players_completed} players completed<br>${r.players_stopped_here} stopped here</div>`,
+    });
+
+    const rec = d.recent || [];
+    document.getElementById("recent").innerHTML = rec.length
+      ? `<table><tr><th>When</th><th>Event</th><th>Level</th><th>Result</th><th>Deaths</th><th>Banked</th></tr>` +
+        rec.map(r => `<tr>
+          <td>${new Date(r.at).toLocaleTimeString()}</td>
+          <td>${r.event.replace("_", " ")}</td>
+          <td>${r.level_name ?? "—"}</td>
+          <td class="${r.completed == null ? "" : r.completed ? "ok" : "no"}">${r.completed == null ? "—" : r.completed ? "completed" : "abandoned"}</td>
+          <td>${r.deaths ?? "—"}</td><td>${r.banked ?? "—"}</td></tr>`).join("") + `</table>`
+      : '<div class="empty">No events yet.</div>';
+  } catch (e) {
+    document.getElementById("dot").className = "err";
+    document.getElementById("upd").textContent = "connection error — retrying";
+  }
+}
+
+setInterval(() => {
+  if (lastFetch) document.getElementById("upd").textContent =
+    "live · updated " + Math.round((Date.now() - lastFetch) / 1000) + "s ago";
+}, 1000);
+refresh();
+setInterval(refresh, 15000);
+</script>
+</body>
+</html>

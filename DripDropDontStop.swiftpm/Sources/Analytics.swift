@@ -16,8 +16,8 @@ import Foundation
 
 enum Analytics {
     private static let endpoint = URL(
-        string: "https://zklvtlswhciladdljjrs.supabase.co/rest/v1/dripdrop_events")!
-    private static let apiKey = "sb_publishable_uUn-AMaGc0H03xfMmeL95g_kOjGSRxu"
+        string: "https://hdsnwuhbmbvrkjctrsbm.supabase.co/rest/v1/dripdrop_events")!
+    private static let apiKey = "sb_publishable_8yxzekSbGKHy9SK-HRJWYw_fH7-2KaQ"
     private static let deviceKey = "dripdrop.analytics.device"
     private static let queueKey = "dripdrop.analytics.queue"
     private static var sessionBegan: Date?
