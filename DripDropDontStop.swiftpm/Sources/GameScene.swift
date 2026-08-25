@@ -106,9 +106,9 @@ struct Level {
     /// Ambience palette for this diorama.
     var mood: Mood = .abyss
     /// Seconds of lift thrust per level (tester-requested air supply):
-    /// hold/blow drains it; empty = no more lift until restart. Death does
-    /// NOT refill it — the ↺ restart does. (8 → 4 → 2 across David's
-    /// tuning passes: scarcity is the point.)
+    /// hold/blow drains it; empty = no more lift this attempt. Every
+    /// death now IS a restart, so each attempt starts with a full tank.
+    /// (8 → 4 → 2 across David's tuning passes: scarcity is the point.)
     var liftBudget: Double = 2
     /// How long ice holds before melting back on its own. Expiring over a
     /// grate is death — levels with long mandatory skates (11, 22…) may
@@ -879,7 +879,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
 
     // MARK: Level construction
 
-    func loadLevel(_ i: Int) {
+    func loadLevel(_ i: Int, skipCountdown: Bool = false) {
         removeAllChildren()
         levelIndex = i
         let level = Levels.all[i]
@@ -944,7 +944,21 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         spawnDroplet(at: point(level.spawn))
         applyPhase()
         transitioning = false
-        startCountdown()
+        if skipCountdown { quickStart() } else { startCountdown() }
+    }
+
+    /// A death restart: the same full reset as ↺, minus the ceremony —
+    /// the player already knows the level; hand them the fresh attempt
+    /// immediately.
+    private func quickStart() {
+        runState = .playing
+        model?.phaseLocked = false
+        model?.countdown = nil
+        droplet.physicsBody?.isDynamic = true
+        levelStartTime = CACurrentMediaTime()
+        spawnMarker?.run(.sequence([.fadeOut(withDuration: 0.4),
+                                    .removeFromParent()]))
+        spawnMarker = nil
     }
 
     /// Ready — Steady — Go! The droplet holds at spawn and the score clock
@@ -1424,13 +1438,21 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         }
         burst(at: droplet.position, color: splash, up: false, count: 30)
         shake(0.7)
-        droplet.physicsBody?.velocity = .zero
-        droplet.physicsBody?.angularVelocity = 0
-        droplet.position = point(Levels.all[levelIndex].spawn)
-        // Ice survives a death (v1.0 behavior — Switchback relies on it),
-        // but vapor condenses: respawning as rising steam would be chaos.
-        if model?.phase == .steam { model?.phase = .water }
-        dropletVisual?.reset()   // no trail streak across the teleport
+        // A death IS a restart now (old-people-proofing): the same full
+        // fresh attempt as ↺ — air, ink, pot, and phase all reset — just
+        // without the countdown ceremony. This supersedes the old rules
+        // "death does not refill the air supply" and "ice survives a
+        // death": there is no mid-attempt limbo left to protect.
+        transitioning = true
+        droplet.physicsBody?.isDynamic = false
+        droplet.isHidden = true
+        run(.sequence([
+            .wait(forDuration: 0.45),        // let the splash read
+            .run { [weak self] in
+                guard let self else { return }
+                self.loadLevel(self.levelIndex, skipCountdown: true)
+            },
+        ]))
     }
 
     // MARK: Touch — stationary hold lifts (mic fallback), a moving finger carves

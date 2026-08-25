@@ -321,3 +321,16 @@ xcodebuild -exportArchive -archivePath /tmp/ddd.xcarchive \
   App → Services → Game Center, or the reports just log and no-op.
 - **Secrets card**: the menu's SECRETS button finally maps the magic
   paths (darkness freeze, real breath) — they were undiscoverable.
+
+## Since build 9 (toward 1.3)
+
+- Hints teach TAP, not blow (breath lives in the Secrets card now).
+- THE DEPTHS: levels 23–30, plus name-keyed best scores (reorder-safe).
+- Intelligent re-engagement reminders (2/7/21-day ladder, progress-aware
+  copy, permission asked on the first banked basin).
+- Old-people-proof pass: progressive level unlock (completed + next
+  only), labeled orange Restart, 58pt gradient FREEZE/STEAM buttons.
+- **Death IS a restart now**: same full reset as ↺ (air, ink, pot,
+  phase), minus the countdown. Supersedes the old rules "death does not
+  refill the air supply" and "ice survives a death" — there is no
+  mid-attempt limbo left to protect.
