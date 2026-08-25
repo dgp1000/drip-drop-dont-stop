@@ -24,17 +24,27 @@ struct GameView: View {
                             .font(.system(.caption2, design: .monospaced))
                             .foregroundStyle(model.availableScore >= 500 ? .cyan : .orange)
                     }
+                    // Old-people-proof: restart is a real labeled button,
+                    // not a mystery glyph.
                     Button {
                         model.resetLevel()
                     } label: {
-                        Image(systemName: "arrow.counterclockwise")
-                            .foregroundStyle(.white.opacity(0.8))
+                        Label("Restart", systemImage: "arrow.counterclockwise")
+                            .font(.subheadline.weight(.heavy))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 9)
+                            .background(Color.orange.opacity(0.9), in: Capsule())
+                            .shadow(color: .orange.opacity(0.45), radius: 6)
                     }
                     Button {
                         model.backToMenu()
                     } label: {
-                        Image(systemName: "square.grid.2x2")
-                            .foregroundStyle(.white.opacity(0.8))
+                        Image(systemName: "square.grid.2x2.fill")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.white.opacity(0.9))
+                            .padding(9)
+                            .background(.white.opacity(0.15), in: Circle())
                     }
                 }
                 Text(model.hint)
@@ -44,84 +54,56 @@ struct GameView: View {
 
                 Spacer()
 
-                HStack(spacing: 16) {
-                    Button {
-                        model.toggleIce()
-                    } label: {
-                        Label(model.isIce ? "Melt" : "Freeze",
-                              systemImage: model.isIce ? "drop.fill" : "snowflake")
-                            .font(.footnote.weight(.semibold))
-                            .lineLimit(1)
-                            .fixedSize()
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 9)
-                            .background(
-                                model.isIce ? Color.blue.opacity(0.4) : Color.cyan.opacity(0.25),
-                                in: Capsule())
-                    }
-                    .disabled(model.phaseLocked)
-                    .opacity(model.phaseLocked ? 0.4 : 1)
-
-                    if model.steamAllowed {
-                        Button {
-                            model.toggleSteam()
-                        } label: {
-                            Label(model.phase == .steam ? "Condense" : "Steam",
-                                  systemImage: model.phase == .steam ? "drop.fill" : "cloud.fill")
-                                .font(.footnote.weight(.semibold))
-                                .lineLimit(1)
-                                .fixedSize()
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 9)
-                                .background(
-                                    model.phase == .steam ? Color.gray.opacity(0.5)
-                                                          : Color.white.opacity(0.18),
-                                    in: Capsule())
-                        }
-                        .disabled(model.phaseLocked || (model.phase != .steam && !model.steamReady))
-                        .opacity(model.phaseLocked || (model.phase != .steam && !model.steamReady) ? 0.4 : 1)
-                    }
-
-                    if model.carveAllowed {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Label("INK", systemImage: "pencil.tip")
-                                .font(.system(size: 9, weight: .bold))
-                                .tracking(1.5)
-                                .foregroundStyle(.white.opacity(0.5))
-                            GeometryReader { geo in
-                                ZStack(alignment: .leading) {
-                                    Capsule().fill(.white.opacity(0.12))
-                                    Capsule().fill(Color(red: 0.6, green: 0.9, blue: 1.0))
-                                        .frame(width: geo.size.width * model.inkFrac)
-                                }
+                // Old-people-proof control bar: meters on their own slim
+                // row, then BIG phase buttons that read from across the
+                // room. Two rows so ink + lift + two buttons always fit.
+                VStack(alignment: .leading, spacing: 10) {
+                    if model.carveAllowed || model.blowAllowed {
+                        HStack(spacing: 16) {
+                            if model.carveAllowed {
+                                meter(label: "INK", icon: "pencil.tip",
+                                      frac: model.inkFrac,
+                                      color: Color(red: 0.6, green: 0.9, blue: 1.0))
+                                    .frame(maxWidth: 110)
                             }
-                            .frame(height: 6)
-                        }
-                        .frame(maxWidth: 74)
-                    }
-
-                    if model.blowAllowed {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Label("LIFT", systemImage: "hand.tap.fill")
-                            .font(.system(size: 9, weight: .bold))
-                            .tracking(1.5)
-                            .foregroundStyle(.white.opacity(0.5))
-                        GeometryReader { geo in
-                            ZStack(alignment: .leading) {
-                                Capsule().fill(.white.opacity(0.12))
-                                Capsule()
-                                    .fill(model.liftFrac > 0.3 ? Color.cyan : Color.orange)
-                                    .frame(width: geo.size.width * model.liftFrac)
+                            if model.blowAllowed {
+                                meter(label: "LIFT", icon: "hand.tap.fill",
+                                      frac: model.liftFrac,
+                                      color: model.liftFrac > 0.3 ? .cyan : .orange)
+                                    .frame(maxWidth: 130)
                             }
+                            Spacer()
                         }
-                        .frame(height: 6)
-                    }
-                    .frame(maxWidth: 110)
                     }
 
-                    Spacer()
+                    HStack(spacing: 14) {
+                        phaseButton(
+                            title: model.isIce ? "MELT" : "FREEZE",
+                            icon: model.isIce ? "drop.fill" : "snowflake",
+                            gradient: model.isIce
+                                ? [Color(red: 0.15, green: 0.35, blue: 0.75),
+                                   Color(red: 0.10, green: 0.20, blue: 0.50)]
+                                : [Color(red: 0.15, green: 0.75, blue: 0.95),
+                                   Color(red: 0.10, green: 0.40, blue: 0.85)],
+                            glow: .cyan,
+                            disabled: model.phaseLocked
+                        ) { model.toggleIce() }
+
+                        if model.steamAllowed {
+                            phaseButton(
+                                title: model.phase == .steam ? "CONDENSE" : "STEAM",
+                                icon: model.phase == .steam ? "drop.fill" : "cloud.fill",
+                                gradient: model.phase == .steam
+                                    ? [Color(white: 0.45), Color(white: 0.25)]
+                                    : [Color(white: 0.85), Color(white: 0.55)],
+                                glow: .white,
+                                disabled: model.phaseLocked
+                                    || (model.phase != .steam && !model.steamReady)
+                            ) { model.toggleSteam() }
+                        }
+
+                        Spacer()
+                    }
                 }
             }
             .padding(.horizontal, 18)
@@ -157,6 +139,58 @@ struct GameView: View {
         #if targetEnvironment(simulator)
         .modifier(SimTiltKeys(model: model))
         #endif
+    }
+
+    /// A big, unmistakable phase button: chunky icon, loud label,
+    /// gradient fill, glow. Steam's text scales down a notch so
+    /// "CONDENSE" never wraps beside FREEZE.
+    private func phaseButton(title: String, icon: String, gradient: [Color],
+                             glow: Color, disabled: Bool,
+                             action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 9) {
+                Image(systemName: icon)
+                    .font(.system(size: 24, weight: .bold))
+                    .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
+                Text(title)
+                    .font(.system(size: 19, weight: .black, design: .rounded))
+                    .tracking(1)
+                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
+            }
+            .foregroundStyle(.white)
+            .shadow(color: .black.opacity(0.4), radius: 1, y: 1)
+            .padding(.horizontal, 18)
+            .frame(height: 58)
+            .background(
+                LinearGradient(colors: gradient,
+                               startPoint: .top, endPoint: .bottom),
+                in: RoundedRectangle(cornerRadius: 18))
+            .overlay(RoundedRectangle(cornerRadius: 18)
+                .stroke(.white.opacity(0.35), lineWidth: 1.5))
+            .shadow(color: glow.opacity(disabled ? 0 : 0.45), radius: 8, y: 2)
+        }
+        .disabled(disabled)
+        .opacity(disabled ? 0.35 : 1)
+    }
+
+    /// A labeled resource meter (ink / lift).
+    private func meter(label: String, icon: String, frac: CGFloat,
+                       color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Label(label, systemImage: icon)
+                .font(.system(size: 11, weight: .bold))
+                .tracking(1.5)
+                .foregroundStyle(.white.opacity(0.6))
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(.white.opacity(0.12))
+                    Capsule().fill(color)
+                        .frame(width: geo.size.width * frac)
+                }
+            }
+            .frame(height: 8)
+        }
     }
 
     private var finishOverlay: some View {

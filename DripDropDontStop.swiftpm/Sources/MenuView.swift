@@ -68,25 +68,30 @@ struct MenuView: View {
                 ScrollView {
                     VStack(spacing: 10) {
                         ForEach(Array(Levels.tiers.enumerated()), id: \.offset) { _, tier in
-                            HStack(spacing: 10) {
-                                Rectangle().fill(.white.opacity(0.14)).frame(height: 1)
-                                Text(tier.title)
-                                    .font(.system(size: 10, weight: .bold))
-                                    .tracking(2.5)
-                                    .foregroundStyle(.white.opacity(0.45))
-                                    .fixedSize()
-                                Rectangle().fill(.white.opacity(0.14)).frame(height: 1)
-                            }
-                            .padding(.top, 8)
-                            ForEach(Array(tier.range), id: \.self) { i in
-                                Button {
-                                    model.startGame(at: i)
-                                } label: {
-                                    LevelRow(index: i, level: Levels.all[i],
-                                             best: model.bestScores[i])
+                            let visible = tier.range.filter(unlocked)
+                            if !visible.isEmpty {
+                                HStack(spacing: 10) {
+                                    Rectangle().fill(.white.opacity(0.14)).frame(height: 1)
+                                    Text(tier.title)
+                                        .font(.system(size: 10, weight: .bold))
+                                        .tracking(2.5)
+                                        .foregroundStyle(.white.opacity(0.45))
+                                        .fixedSize()
+                                    Rectangle().fill(.white.opacity(0.14)).frame(height: 1)
+                                }
+                                .padding(.top, 8)
+                                ForEach(visible, id: \.self) { i in
+                                    Button {
+                                        model.startGame(at: i)
+                                    } label: {
+                                        LevelRow(index: i, level: Levels.all[i],
+                                                 best: model.bestScores[i],
+                                                 isNext: isNext(i))
+                                    }
                                 }
                             }
                         }
+                        lockedTeaser
                     }
                     .padding(.horizontal, 20)
                     .padding(.bottom, 24)
@@ -108,6 +113,31 @@ struct MenuView: View {
             }
         }
         .sheet(isPresented: $showSecrets) { SecretsCard() }
+    }
+
+    /// Old-people-proof progression: the menu shows only where you've
+    /// been and the one place you can go next. A level unlocks when the
+    /// one before it has been banked — index-relative, so it survives
+    /// the planned difficulty re-sort untouched.
+    private func unlocked(_ i: Int) -> Bool {
+        i == 0 || model.bestScores[i - 1] > 0
+    }
+
+    /// The single next place to go: first unlocked level with no bank yet.
+    private func isNext(_ i: Int) -> Bool {
+        model.bestScores[i] == 0 && unlocked(i)
+    }
+
+    /// A quiet promise that the cave goes deeper.
+    @ViewBuilder private var lockedTeaser: some View {
+        let locked = Levels.all.indices.filter { !unlocked($0) }.count
+        if locked > 0 {
+            Label("\(locked) more levels await — finish the newest one to reveal the next.",
+                  systemImage: "lock.fill")
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.45))
+                .padding(.top, 14)
+        }
     }
 
     /// Gold/silver/bronze counts across all levels. Hidden until the
@@ -193,6 +223,7 @@ private struct LevelRow: View {
     let index: Int
     let level: Level
     let best: Int
+    var isNext = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -212,25 +243,38 @@ private struct LevelRow: View {
                 }
             }
             Spacer()
-            if let medal = Medal(best: best) {
-                Image(systemName: "medal.fill")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(medal.color)
-                    .shadow(color: medal.color.opacity(0.6), radius: 3)
-            }
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(best > 0 ? "\(best)" : "—")
-                    .font(.system(.body, design: .monospaced).weight(.bold))
-                    .foregroundStyle(best > 0 ? .orange : .white.opacity(0.25))
-                Text("BEST")
-                    .font(.system(size: 8, weight: .bold))
-                    .tracking(1.5)
-                    .foregroundStyle(.white.opacity(0.3))
+            if isNext {
+                // The one obvious thing to tap.
+                Label("PLAY", systemImage: "play.fill")
+                    .font(.system(size: 13, weight: .heavy))
+                    .tracking(1)
+                    .foregroundStyle(.black)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(Color.cyan, in: Capsule())
+            } else {
+                if let medal = Medal(best: best) {
+                    Image(systemName: "medal.fill")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(medal.color)
+                        .shadow(color: medal.color.opacity(0.6), radius: 3)
+                }
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(best > 0 ? "\(best)" : "—")
+                        .font(.system(.body, design: .monospaced).weight(.bold))
+                        .foregroundStyle(best > 0 ? .orange : .white.opacity(0.25))
+                    Text("BEST")
+                        .font(.system(size: 8, weight: .bold))
+                        .tracking(1.5)
+                        .foregroundStyle(.white.opacity(0.3))
+                }
             }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(RoundedRectangle(cornerRadius: 14).fill(.white.opacity(0.06)))
+        .overlay(RoundedRectangle(cornerRadius: 14)
+            .stroke(isNext ? Color.cyan.opacity(0.8) : .clear, lineWidth: 2))
     }
 
     /// Which verbs this level offers, at a glance.
