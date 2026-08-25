@@ -8,6 +8,29 @@ enum Phase {
     case water, ice, steam
 }
 
+/// Best scores are keyed by level NAME, not index — a difficulty re-sort
+/// of the level list is planned, and index keys would silently attach
+/// every player's bests (and medals) to the wrong levels. One-time
+/// migration copies the old index keys over; run it BEFORE any reorder
+/// ships, while indexes still mean what they meant when written.
+enum BestScores {
+    static func key(_ name: String) -> String {
+        "dripdrop.best." + name.lowercased().replacingOccurrences(of: " ", with: "-")
+    }
+
+    static func migrateIfNeeded() {
+        let d = UserDefaults.standard
+        guard !d.bool(forKey: "dripdrop.bestKeysMigrated") else { return }
+        for (i, level) in Levels.all.enumerated() {
+            let old = d.integer(forKey: "dripdrop.best.\(i)")
+            if old > 0, d.object(forKey: key(level.name)) == nil {
+                d.set(old, forKey: key(level.name))
+            }
+        }
+        d.set(true, forKey: "dripdrop.bestKeysMigrated")
+    }
+}
+
 final class GameModel: ObservableObject {
     @Published var levelNumber = 1
     @Published var levelName = ""
@@ -60,7 +83,8 @@ final class GameModel: ObservableObject {
 
     init() {
         let defaults = UserDefaults.standard
-        bestScores = (0..<Levels.all.count).map { defaults.integer(forKey: "dripdrop.best.\($0)") }
+        BestScores.migrateIfNeeded()
+        bestScores = Levels.all.map { defaults.integer(forKey: BestScores.key($0.name)) }
         bestRun = defaults.integer(forKey: "dripdrop.bestRun")
         scene = GameScene(size: UIScreen.main.bounds.size)
         scene.scaleMode = .resizeFill
@@ -110,7 +134,8 @@ final class GameModel: ObservableObject {
         totalScore += banked
         if banked > bestScores[levelIndex] {
             bestScores[levelIndex] = banked
-            UserDefaults.standard.set(banked, forKey: "dripdrop.best.\(levelIndex)")
+            UserDefaults.standard.set(banked,
+                                      forKey: BestScores.key(Levels.all[levelIndex].name))
         }
         GameCenter.shared.report(.firstBasin)
         // 525 = a par-or-better finish (the pot decays normalized by par —

@@ -126,6 +126,7 @@ enum Levels {
         ("MACHINERY", 10..<13),     // movers
         ("STEAM", 13..<18),         // the third phase
         ("EXPERT", 18..<22),        // everything, one route each
+        ("THE DEPTHS", 22..<30),    // combos the game hasn't demanded yet
     ]
 
     static let all: [Level] = [
@@ -554,6 +555,174 @@ enum Levels {
               // README-flagged long skate: melting mid-bridge over the
               // all-grate floor is death, and the carve happens first —
               // give the skate home an honest window.
+              iceDuration: 12),
+        // MARK: THE DEPTHS (23-30) — 22→30 expansion, 25 Aug 2026. Each
+        // level is a combo the game hasn't demanded yet. Pars are
+        // provisional; every level needs a device playtest before it
+        // ships (routes reasoned from the physics rules, not yet run).
+        // The melt clock IS the level: refreezing resets it (verified in
+        // update()), so the wooden islands are clock reset stations.
+        Level(name: "Undertow",
+              hint: "The melt clock is the level: FREEZE, skate the grates, and MELT on the wooden islands — a fresh freeze restarts the clock.",
+              spawn: CGPoint(x: 0.06, y: 0.30),
+              walls: [
+                  CGRect(x: 0.00, y: 0.24, width: 0.16, height: 0.03),   // start shelf
+              ],
+              zones: [
+                  Zone(rect: CGRect(x: 0.86, y: 0.015, width: 0.12, height: 0.05), kind: .goal),
+                  Zone(rect: CGRect(x: 0.00, y: 0.00, width: 0.34, height: 0.035), kind: .grate),
+                  Zone(rect: CGRect(x: 0.46, y: 0.00, width: 0.36, height: 0.035), kind: .grate),
+              ],
+              par: 18,
+              mood: .frost,
+              iceDuration: 6),      // tight ON PURPOSE — the clock is the puzzle
+        // Two planned strokes from one pot: the catch and the delivery.
+        Level(name: "Splitshot",
+              hint: "Two strokes, one pot of ink: DRAW a slide to catch your fall onto the perch, then a second down to the goal ledge. The floor drinks everything.",
+              spawn: CGPoint(x: 0.10, y: 0.90),
+              walls: [
+                  CGRect(x: 0.40, y: 0.50, width: 0.16, height: 0.03),   // the perch
+                  CGRect(x: 0.80, y: 0.24, width: 0.18, height: 0.03),   // goal ledge
+              ],
+              zones: [
+                  Zone(rect: CGRect(x: 0.84, y: 0.27, width: 0.12, height: 0.05), kind: .goal),
+                  Zone(rect: CGRect(x: 0.00, y: 0.00, width: 1.00, height: 0.035), kind: .drain),
+              ],
+              inkBudget: 300,
+              par: 22,
+              mood: .abyss),
+        // One way only: the floor is all drain, so the lift is the only
+        // dry ground — board it LOW off the pad, and the icicle band's
+        // slot sits directly over the lift column.
+        Level(name: "Dumbwaiter",
+              hint: "The lift is the only dry ground: board it LOW from the pad, ride to the top, then STEAM through the slot and condense on the high ledge.",
+              spawn: CGPoint(x: 0.87, y: 0.105),
+              walls: [
+                  CGRect(x: 0.80, y: 0.06, width: 0.16, height: 0.03),   // start pad
+                  CGRect(x: 0.42, y: 0.80, width: 0.22, height: 0.03),   // goal ledge
+              ],
+              zones: [
+                  Zone(rect: CGRect(x: 0.47, y: 0.83, width: 0.12, height: 0.05), kind: .goal),
+                  Zone(rect: CGRect(x: 0.00, y: 0.00, width: 1.00, height: 0.035), kind: .drain),
+                  Zone(rect: CGRect(x: 0.00, y: 0.55, width: 0.50, height: 0.04), kind: .drain),  // icicles: slot over the lift
+                  Zone(rect: CGRect(x: 0.74, y: 0.55, width: 0.26, height: 0.04), kind: .drain),
+              ],
+              movers: [
+                  Mover(center: CGPoint(x: 0.60, y: 0.30),
+                        size: CGSize(width: 0.18, height: 0.03),
+                        travel: CGVector(dx: 0, dy: 0.30), period: 4.6),
+              ],
+              par: 24,
+              steamAllowed: true,
+              blowAllowed: false,
+              mood: .mist),
+        // The lift's apex is the only launch that clears the wide pit —
+        // the icicle ceiling forbids flying it, and 0.26 is too far to
+        // skate-jump from the flat.
+        Level(name: "Cold Boarding",
+              hint: "FREEZE falling, land the moving lift, and ride to the top — only its height clears the wide pit. Skate home from where you land.",
+              spawn: CGPoint(x: 0.10, y: 0.90),
+              walls: [],
+              zones: [
+                  Zone(rect: CGRect(x: 0.86, y: 0.015, width: 0.12, height: 0.05), kind: .goal),
+                  Zone(rect: CGRect(x: 0.00, y: 0.00, width: 0.42, height: 0.035), kind: .grate),
+                  Zone(rect: CGRect(x: 0.42, y: 0.00, width: 0.26, height: 0.035), kind: .drain),  // the wide pit
+                  Zone(rect: CGRect(x: 0.68, y: 0.00, width: 0.32, height: 0.035), kind: .grate),
+                  Zone(rect: CGRect(x: 0.30, y: 0.62, width: 0.70, height: 0.04), kind: .drain),  // icicles: no flying it
+              ],
+              movers: [
+                  Mover(center: CGPoint(x: 0.30, y: 0.35),
+                        size: CGSize(width: 0.18, height: 0.03),
+                        travel: CGVector(dx: 0, dy: 0.22), period: 3.8),
+              ],
+              par: 20,
+              blowAllowed: false,
+              mood: .frost,
+              iceDuration: 12),
+        // Stepping Stones stood the hops on their side; this stacks them:
+        // three offset gaps, three bursts, condense on the perch between.
+        Level(name: "Kettle Drum",
+              hint: "Three fronts, three breaths of steam: up each gap, condense on the perch, wait out the recharge — the gaps never line up.",
+              spawn: CGPoint(x: 0.10, y: 0.08),
+              walls: [
+                  CGRect(x: 0.05, y: 0.42, width: 0.16, height: 0.03),   // perch 1
+                  CGRect(x: 0.78, y: 0.67, width: 0.16, height: 0.03),   // perch 2
+                  CGRect(x: 0.04, y: 0.90, width: 0.18, height: 0.03),   // goal ledge
+              ],
+              zones: [
+                  Zone(rect: CGRect(x: 0.08, y: 0.93, width: 0.12, height: 0.045), kind: .goal),
+                  Zone(rect: CGRect(x: 0.25, y: 0.30, width: 0.75, height: 0.04), kind: .drain),  // front 1: gap left
+                  Zone(rect: CGRect(x: 0.00, y: 0.55, width: 0.72, height: 0.04), kind: .drain),  // front 2: gap right
+                  Zone(rect: CGRect(x: 0.30, y: 0.80, width: 0.70, height: 0.04), kind: .drain),  // front 3: gap left
+              ],
+              par: 26,
+              steamAllowed: true,
+              blowAllowed: false,
+              mood: .storm),
+        // Everything rationed: one slide's worth of ink to launch from,
+        // a breath and a half of lift to stretch the arc. High start so
+        // the carve redirects a fall (ground starts can't buy altitude).
+        Level(name: "Ration Book",
+              hint: "Everything is rationed: one short slide to launch from, and a breath and a half of lift to stretch the arc onto the ledge. Spend both perfectly.",
+              spawn: CGPoint(x: 0.08, y: 0.66),
+              walls: [
+                  CGRect(x: 0.02, y: 0.60, width: 0.16, height: 0.03),   // start shelf
+                  CGRect(x: 0.80, y: 0.30, width: 0.18, height: 0.03),   // goal ledge
+              ],
+              zones: [
+                  Zone(rect: CGRect(x: 0.84, y: 0.33, width: 0.12, height: 0.05), kind: .goal),
+                  Zone(rect: CGRect(x: 0.00, y: 0.00, width: 1.00, height: 0.035), kind: .drain),
+                  Zone(rect: CGRect(x: 0.30, y: 0.72, width: 0.70, height: 0.05), kind: .drain),  // icicles: no high road
+              ],
+              inkBudget: 160,
+              par: 22,
+              blowAllowed: true,
+              mood: .warm,
+              liftBudget: 1.5),
+        // The wheel at the far wall: skate, tap the break, catch the
+        // lift low and step off LEFT at the top.
+        Level(name: "Millrace",
+              hint: "Skate the millrace, TAP across the break, and catch the wheel at the far wall — ride it up and step off LEFT at the top.",
+              spawn: CGPoint(x: 0.06, y: 0.86),
+              walls: [
+                  CGRect(x: 0.00, y: 0.80, width: 0.14, height: 0.03),   // start shelf
+                  CGRect(x: 0.66, y: 0.52, width: 0.18, height: 0.03),   // goal ledge
+              ],
+              zones: [
+                  Zone(rect: CGRect(x: 0.70, y: 0.55, width: 0.12, height: 0.05), kind: .goal),
+                  Zone(rect: CGRect(x: 0.00, y: 0.00, width: 0.34, height: 0.035), kind: .grate),
+                  Zone(rect: CGRect(x: 0.34, y: 0.00, width: 0.16, height: 0.035), kind: .drain),  // the break
+                  Zone(rect: CGRect(x: 0.50, y: 0.00, width: 0.36, height: 0.035), kind: .grate),
+              ],
+              movers: [
+                  Mover(center: CGPoint(x: 0.93, y: 0.42),
+                        size: CGSize(width: 0.14, height: 0.03),
+                        travel: CGVector(dx: 0, dy: 0.36), period: 4.8),
+              ],
+              par: 26,
+              blowAllowed: true,
+              mood: .abyss,
+              iceDuration: 12),
+        // The capstone of THE DEPTHS: all four verbs, one route.
+        Level(name: "The Cistern",
+              hint: "CARVE your catch, FREEZE and skate, TAP the pit, then STEAM up the right flue and drift LEFT onto the cistern shelf.",
+              spawn: CGPoint(x: 0.42, y: 0.92),
+              walls: [
+                  CGRect(x: 0.02, y: 0.55, width: 0.16, height: 0.03),   // the perch
+                  CGRect(x: 0.60, y: 0.78, width: 0.22, height: 0.03),   // cistern shelf
+              ],
+              zones: [
+                  Zone(rect: CGRect(x: 0.65, y: 0.81, width: 0.12, height: 0.05), kind: .goal),
+                  Zone(rect: CGRect(x: 0.00, y: 0.00, width: 0.60, height: 0.035), kind: .grate),
+                  Zone(rect: CGRect(x: 0.60, y: 0.00, width: 0.16, height: 0.035), kind: .drain),  // the pit
+                  Zone(rect: CGRect(x: 0.76, y: 0.00, width: 0.24, height: 0.035), kind: .grate),
+                  Zone(rect: CGRect(x: 0.20, y: 0.45, width: 0.55, height: 0.04), kind: .drain),  // icicles: the flue is right
+              ],
+              inkBudget: 200,
+              par: 40,
+              steamAllowed: true,
+              blowAllowed: true,
+              mood: .storm,
               iceDuration: 12),
     ]
 }
