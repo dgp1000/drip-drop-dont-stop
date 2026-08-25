@@ -3,6 +3,11 @@ import SpriteKit
 
 struct GameView: View {
     @ObservedObject var model: GameModel
+    /// The HUD hint is a short-lived reminder (the briefing card is the
+    /// real read): amber on a scrim so it beats any backdrop, faded out
+    /// a few seconds after GO. A new level resets it; death restarts
+    /// leave it hidden.
+    @State private var hintOpacity: Double = 1
 
     var body: some View {
         ZStack {
@@ -48,9 +53,14 @@ struct GameView: View {
                     }
                 }
                 Text(model.hint)
-                    .font(.footnote)
-                    .foregroundStyle(.white.opacity(0.65))
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Color(red: 1.0, green: 0.85, blue: 0.4))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(.black.opacity(0.5),
+                                in: RoundedRectangle(cornerRadius: 10))
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .opacity(hintOpacity)
 
                 Spacer()
 
@@ -125,6 +135,19 @@ struct GameView: View {
         }
         .animation(.spring(duration: 0.3), value: model.countdown)
         .animation(.spring(duration: 0.35), value: model.briefing)
+        .onChange(of: model.briefing) { showing in
+            // A fresh level (briefing up) brings the reminder back.
+            if showing { hintOpacity = 1 }
+        }
+        .onChange(of: model.countdown) { phase in
+            // GO! starts the clock — give the hint a few seconds, then
+            // clear the stage.
+            if phase == "GO!" {
+                withAnimation(.easeOut(duration: 1.4).delay(5)) {
+                    hintOpacity = 0
+                }
+            }
+        }
         #if targetEnvironment(simulator)
         .modifier(SimTiltKeys(model: model))
         #endif
