@@ -1113,6 +1113,19 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         physicsBody?.categoryBitMask = Cat.wall
         physicsBody?.friction = 0.15
 
+        // Tester request: the edge loop was invisible, so the droplet
+        // seemed to bounce off nothing. The glass wall is now drawn — a
+        // soft line just inside the physics edge, neutral white so it
+        // reads on every mood.
+        let border = SKShapeNode(rect: frame.insetBy(dx: 2.5, dy: 2.5),
+                                 cornerRadius: 8)
+        border.strokeColor = UIColor(white: 0.9, alpha: 0.30)
+        border.lineWidth = 2.5
+        border.glowWidth = 2.5
+        border.fillColor = .clear
+        border.zPosition = 4
+        addChild(border)
+
         channels = []
         carveStart = nil
         carvePreview = nil
