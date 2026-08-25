@@ -138,6 +138,8 @@ final class GameModel: ObservableObject {
                                       forKey: BestScores.key(Levels.all[levelIndex].name))
         }
         GameCenter.shared.report(.firstBasin)
+        // The one-and-only permission ask rides the first win.
+        Reminders.shared.requestAfterFirstBank(bestScores: bestScores, bestRun: bestRun)
         // 525 = a par-or-better finish (the pot decays normalized by par —
         // same math as the menu's gold medal).
         if banked >= 525 { GameCenter.shared.report(.underPar) }
