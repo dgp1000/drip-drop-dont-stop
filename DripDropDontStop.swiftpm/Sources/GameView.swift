@@ -16,10 +16,6 @@ struct GameView: View {
 
             VStack(spacing: 6) {
                 HStack(alignment: .top) {
-                    Text("LEVEL \(model.levelNumber) · \(model.levelName.uppercased())")
-                        .font(.caption.weight(.bold))
-                        .tracking(2)
-                        .foregroundStyle(.white.opacity(0.9))
                     Spacer()
                     VStack(alignment: .trailing, spacing: 0) {
                         Text("\(model.totalScore)")
@@ -52,16 +48,6 @@ struct GameView: View {
                             .background(.white.opacity(0.15), in: Circle())
                     }
                 }
-                Text(model.hint)
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Color(red: 1.0, green: 0.85, blue: 0.4))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(.black.opacity(0.5),
-                                in: RoundedRectangle(cornerRadius: 10))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .opacity(hintOpacity)
-
                 Spacer()
 
                 // Old-people-proof control bar: meters on their own slim
@@ -121,6 +107,17 @@ struct GameView: View {
             .padding(.bottom, 14)
 
             if model.briefing { briefingCard }
+        }
+        .overlay(alignment: .topLeading) {
+            GeometryReader { geo in
+                if !model.briefing {
+                    infoBlock
+                        .padding(.horizontal, 18)
+                        .padding(.top, 8 + titleSlot * geo.size.height)
+                }
+            }
+        }
+        .overlay {
 
             if let phase = model.countdown {
                 Text(phase)
@@ -151,6 +148,68 @@ struct GameView: View {
         #if targetEnvironment(simulator)
         .modifier(SimTiltKeys(model: model))
         #endif
+    }
+
+    /// Title + hint travel together as one floating block that dodges
+    /// the level: three candidate positions down the left side are
+    /// scored against the level's geometry and the least-occupied wins.
+    /// The scrim pill keeps a marginal overlap readable regardless.
+    private var infoBlock: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("LEVEL \(model.levelNumber) · \(model.levelName.uppercased())")
+                .font(.caption.weight(.bold))
+                .tracking(2)
+                .foregroundStyle(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(.black.opacity(0.5), in: Capsule())
+            Text(model.hint)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Color(red: 1.0, green: 0.85, blue: 0.4))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(.black.opacity(0.5),
+                            in: RoundedRectangle(cornerRadius: 10))
+                .opacity(hintOpacity)
+        }
+        .frame(maxWidth: 330, alignment: .leading)
+    }
+
+    /// Fraction of screen height to push the info block down: the first
+    /// left-column band (top, upper-mid, mid) with the least level
+    /// geometry in it wins. Level coords are bottom-up; screen top-down.
+    private var titleSlot: CGFloat {
+        let level = Levels.all[max(0, min(model.levelNumber - 1, Levels.all.count - 1))]
+        let slots: [CGFloat] = [0.0, 0.15, 0.30]
+        var best: CGFloat = 0
+        var bestArea = CGFloat.greatestFiniteMagnitude
+        for s in slots {
+            let region = CGRect(x: 0, y: 1 - (s + 0.14), width: 0.64, height: 0.14)
+            let area = occupiedArea(of: level, in: region)
+            if area < bestArea - 0.0001 {
+                bestArea = area
+                best = s
+            }
+        }
+        return best
+    }
+
+    private func occupiedArea(of level: Level, in region: CGRect) -> CGFloat {
+        var rects = level.walls + level.zones.map(\.rect)
+        for m in level.movers {
+            // The full sweep of the platform, both directions of travel.
+            rects.append(CGRect(x: m.center.x - m.size.width / 2,
+                                y: m.center.y - m.size.height / 2 - abs(m.travel.dy),
+                                width: m.size.width,
+                                height: m.size.height + 2 * abs(m.travel.dy)))
+        }
+        // The source prop hangs above the spawn.
+        rects.append(CGRect(x: level.spawn.x - 0.06, y: level.spawn.y,
+                            width: 0.12, height: 0.15))
+        return rects.reduce(0) { total, r in
+            let i = r.intersection(region)
+            return total + (i.isNull ? 0 : i.width * i.height)
+        }
     }
 
     /// The pre-level briefing: name, hint, START. Sits on screen for as
