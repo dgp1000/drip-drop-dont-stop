@@ -20,11 +20,21 @@ struct DripDropApp: App {
             .persistentSystemOverlays(.hidden)
         }
         .onChange(of: scenePhase) { phase in
-            // The reminder ladder runs only while the player is away:
-            // rescheduled from fresh progress every time we background.
-            if phase == .background {
+            switch phase {
+            case .background:
+                // The reminder ladder runs only while the player is away:
+                // rescheduled from fresh progress every time we background.
                 Reminders.shared.sync(bestScores: model.bestScores,
                                       bestRun: model.bestRun)
+                // Engagement analytics: close the level visit and the
+                // session at the moment they walk away.
+                if model.screen == .playing { model.logAbandonIfNeeded() }
+                Analytics.sessionEnd(
+                    levelIndex: model.screen == .playing ? model.levelNumber : nil)
+            case .active:
+                Analytics.sessionStart()
+            default:
+                break
             }
         }
     }

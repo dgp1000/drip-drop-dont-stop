@@ -1109,16 +1109,26 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         self.camera = camera
         cam = camera
 
-        physicsBody = SKPhysicsBody(edgeLoopFrom: frame)
+        // Tester request: the edge loop was invisible, so the droplet
+        // seemed to bounce off nothing. The glass wall is now drawn AND
+        // the physics edge follows the same rounded path, matching the
+        // device's display corners — the droplet rolls along the curve
+        // instead of hiding in a square corner behind a curved line.
+        // (No public API exposes the true corner radius; edge-to-edge
+        // devices sit near ~54pt, home-button devices are square.)
+        let bottomInset = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.keyWindow?.safeAreaInsets.bottom ?? 0
+        let cornerR: CGFloat = bottomInset > 0 ? 54 : 10
+        let edgeRect = frame.insetBy(dx: 2.5, dy: 2.5)
+        let edgePath = CGPath(roundedRect: edgeRect,
+                              cornerWidth: cornerR, cornerHeight: cornerR,
+                              transform: nil)
+        physicsBody = SKPhysicsBody(edgeLoopFrom: edgePath)
         physicsBody?.categoryBitMask = Cat.wall
         physicsBody?.friction = 0.15
 
-        // Tester request: the edge loop was invisible, so the droplet
-        // seemed to bounce off nothing. The glass wall is now drawn — a
-        // soft line just inside the physics edge, neutral white so it
-        // reads on every mood.
-        let border = SKShapeNode(rect: frame.insetBy(dx: 2.5, dy: 2.5),
-                                 cornerRadius: 8)
+        let border = SKShapeNode(path: edgePath)
         border.strokeColor = UIColor(white: 0.9, alpha: 0.30)
         border.lineWidth = 2.5
         border.glowWidth = 2.5
@@ -1143,6 +1153,9 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         spawnDroplet(at: point(level.spawn))
         applyPhase()
         transitioning = false
+        // Analytics: a briefing means a fresh visit; skipCountdown means
+        // a death/restart continuing the same one.
+        model?.noteLevelLoaded(fresh: !skipCountdown)
         if skipCountdown { quickStart() } else { beginBriefing() }
     }
 
@@ -1679,6 +1692,7 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         }
         burst(at: droplet.position, color: splash, up: false, count: 30)
         shake(0.7)
+        model?.noteDeath()
         // A death IS a restart now (old-people-proofing): the same full
         // fresh attempt as ↺ — air, ink, pot, and phase all reset — just
         // without the countdown ceremony. This supersedes the old rules

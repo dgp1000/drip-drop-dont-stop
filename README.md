@@ -340,3 +340,17 @@ xcodebuild -exportArchive -archivePath /tmp/ddd.xcarchive \
   phase), minus the countdown. Supersedes the old rules "death does not
   refill the air supply" and "ice survives a death" — there is no
   mid-attempt limbo left to protect.
+
+## Analytics (build 13+)
+
+Anonymous gameplay events post to Supabase (LogACog project, table
+`dripdrop_events`, insert-only publishable key — the API can't read).
+One per-install UUID, no identity. Events: `session_start`,
+`session_end` (duration, where they were), `level_result` (level,
+completed, banked, deaths, duration; death restarts count into one
+"visit", the briefing card doesn't). Analysis views:
+`dripdrop_level_difficulty`, `dripdrop_funnel`, `dripdrop_engagement`.
+
+⚠️ Before the next App Store submission: update ASC App Privacy
+("Product Interaction — not linked to identity") and fix the review
+notes that still claim "no network access".

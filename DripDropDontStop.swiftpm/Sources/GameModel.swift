@@ -130,6 +130,7 @@ final class GameModel: ObservableObject {
     }
 
     func backToMenu() {
+        logAbandonIfNeeded()
         finished = false
         screen = .menu
         GameCenter.shared.setAccessPoint(visible: true)
@@ -147,6 +148,10 @@ final class GameModel: ObservableObject {
         GameCenter.shared.report(.firstBasin)
         // The one-and-only permission ask rides the first win.
         Reminders.shared.requestAfterFirstBank(bestScores: bestScores, bestRun: bestRun)
+        visitLogged = true
+        Analytics.levelResult(index: levelIndex + 1, name: Levels.all[levelIndex].name,
+                              completed: true, banked: banked, deaths: visitDeaths,
+                              duration: Date().timeIntervalSince(visitStart))
         // 525 = a par-or-better finish (the pot decays normalized by par —
         // same math as the menu's gold medal).
         if banked >= 525 { GameCenter.shared.report(.underPar) }
@@ -183,6 +188,7 @@ final class GameModel: ObservableObject {
         // After the blow detector has claimed the audio session — the
         // ambience joins the session, it must not configure one.
         Ambience.shared.start()
+        Analytics.sessionStart()
 
         // Darkness freezes the droplet. iOS has no public ambient-light API,
         // so we use auto-brightness as a proxy: with auto-brightness on,
@@ -224,6 +230,39 @@ final class GameModel: ObservableObject {
     func beginLevel() { scene.beginFromBriefing() }
 
     func resetLevel() { scene.reloadCurrent() }
+
+    // MARK: Analytics — level visits
+
+    /// One "visit" spans a level from fresh arrival to completion or
+    /// walking away; death restarts continue the same visit.
+    private var visitStart = Date()
+    private var visitDeaths = 0
+    private var visitLogged = true
+
+    /// Called by the scene on every loadLevel. `fresh` = arrived from
+    /// the menu or advanced from the previous level (not a death/↺).
+    func noteLevelLoaded(fresh: Bool) {
+        guard fresh else { return }
+        logAbandonIfNeeded()
+        visitStart = Date()
+        visitDeaths = 0
+        visitLogged = false
+    }
+
+    func noteDeath() { visitDeaths += 1 }
+
+    /// The visit ended without a bank (menu button, or app closed).
+    func logAbandonIfNeeded() {
+        guard !visitLogged else { return }
+        visitLogged = true
+        // A visit that never left the briefing card isn't a real attempt
+        // (also filters the scene's didMove reload, which re-enters
+        // loadLevel ~0.2s after every fresh entry).
+        guard !phaseLocked else { return }
+        Analytics.levelResult(index: levelNumber, name: levelName,
+                              completed: false, banked: 0, deaths: visitDeaths,
+                              duration: Date().timeIntervalSince(visitStart))
+    }
 
     func restart() { startGame(at: 0) }
 }
