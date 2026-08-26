@@ -1,7 +1,18 @@
 import SwiftUI
+import UIKit
+
+/// Runtime orientation lock, over and above the plist declarations —
+/// David saw rotation slip through (iPad compat container); this is the
+/// authority every container asks.
+final class OrientationLock: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication,
+                     supportedInterfaceOrientationsFor window: UIWindow?)
+        -> UIInterfaceOrientationMask { .portrait }
+}
 
 @main
 struct DripDropApp: App {
+    @UIApplicationDelegateAdaptor(OrientationLock.self) private var delegate
     @StateObject private var model = GameModel()
     @Environment(\.scenePhase) private var scenePhase
 

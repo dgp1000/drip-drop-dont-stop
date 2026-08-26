@@ -671,14 +671,19 @@ enum Levels {
               hint: "Three fronts, three breaths: STEAM up each gap, drift, and CONDENSE to fall onto the next perch while it recharges. The gaps never line up.",
               spawn: CGPoint(x: 0.10, y: 0.08),
               walls: [
-                  CGRect(x: 0.44, y: 0.44, width: 0.28, height: 0.03),   // perch 1: under gap 2
-                  CGRect(x: 0.16, y: 0.68, width: 0.28, height: 0.03),   // perch 2: under gap 3
+                  // Eased again 26 Aug (David: condense couldn't reach the
+                  // first perch): perches widened toward the drift so the
+                  // condense-FALL lands them — each still extends under
+                  // the next gap for the straight-up burst.
+                  CGRect(x: 0.36, y: 0.44, width: 0.36, height: 0.03),   // perch 1
+                  CGRect(x: 0.16, y: 0.68, width: 0.34, height: 0.03),   // perch 2
                   CGRect(x: 0.02, y: 0.90, width: 0.28, height: 0.03),   // goal ledge
               ],
               zones: [
                   Zone(rect: CGRect(x: 0.08, y: 0.93, width: 0.12, height: 0.045), kind: .goal),
-                  Zone(rect: CGRect(x: 0.28, y: 0.30, width: 0.72, height: 0.04), kind: .drain),  // front 1: gap left
-                  Zone(rect: CGRect(x: 0.00, y: 0.55, width: 0.55, height: 0.04), kind: .drain),  // front 2: gap right
+                  // Fronts spread apart for more drift runway per burst.
+                  Zone(rect: CGRect(x: 0.28, y: 0.26, width: 0.72, height: 0.04), kind: .drain),  // front 1: gap left
+                  Zone(rect: CGRect(x: 0.00, y: 0.58, width: 0.55, height: 0.04), kind: .drain),  // front 2: gap right
                   Zone(rect: CGRect(x: 0.34, y: 0.80, width: 0.66, height: 0.04), kind: .drain),  // front 3: gap left
               ],
               par: 26,
@@ -968,6 +973,9 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     private var iceElapsed: TimeInterval = 0
     private var iceFrac: CGFloat = 1            // remaining freeze time, 1→0
     private var levelIceDuration: TimeInterval = 8
+    #if targetEnvironment(simulator)
+    private var dbgLastLog: TimeInterval = 0
+    #endif
     private var phaseWarned = false             // one warning cue per phase
     /// Zones in scene coordinates, checked geometrically every frame.
     /// Sensor-style physics contacts (collision-less bodies) proved
@@ -1130,14 +1138,23 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
             .first?.keyWindow?.safeAreaInsets.bottom ?? 0
         let cornerR: CGFloat = bottomInset > 0 ? 54 : 10
         let edgeRect = frame.insetBy(dx: 2.5, dy: 2.5)
-        let edgePath = CGPath(roundedRect: edgeRect,
-                              cornerWidth: cornerR, cornerHeight: cornerR,
-                              transform: nil)
-        physicsBody = SKPhysicsBody(edgeLoopFrom: edgePath)
+        // PHYSICS stays the plain rect edge loop — the pre-glass-wall
+        // original, proven over 22 levels. Path-based edge loops (any
+        // corner rounding) imparted a phantom ~200pt/s lateral kick at
+        // floor contact (caught by the -dbgpos trace: vx 0.0 all the way
+        // down, +205 at touch), which is what "zoomed" David's frozen
+        // drop into the pit on Cold Boarding. The DRAWN border keeps the
+        // rounded top for looks; bottom corners draw square so the line
+        // still matches the floor the ball actually feels.
+        physicsBody = SKPhysicsBody(edgeLoopFrom: frame)
         physicsBody?.categoryBitMask = Cat.wall
         physicsBody?.friction = 0.15
 
-        let border = SKShapeNode(path: edgePath)
+        let borderPath = UIBezierPath(
+            roundedRect: edgeRect,
+            byRoundingCorners: [.topLeft, .topRight],
+            cornerRadii: CGSize(width: cornerR, height: cornerR)).cgPath
+        let border = SKShapeNode(path: borderPath)
         border.strokeColor = UIColor(white: 0.9, alpha: 0.30)
         border.lineWidth = 2.5
         border.glowWidth = 2.5
@@ -1414,6 +1431,19 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         guard let model, let body = droplet?.physicsBody else { return }
         frameDT = CGFloat(min(max(currentTime - lastUpdateTime, 0), 0.05))
         lastUpdateTime = currentTime
+        #if targetEnvironment(simulator)
+        // `-dbgpos` harness: half-second position/velocity trace.
+        if ProcessInfo.processInfo.arguments.contains("-dbgpos"),
+           currentTime - dbgLastLog > 0.5 {
+            dbgLastLog = currentTime
+            NSLog("DBGPOS x=%.3f y=%.3f vx=%.1f vy=%.1f phase=%@ grounded=%d",
+                  droplet.position.x / size.width,
+                  droplet.position.y / size.height,
+                  body.velocity.dx, body.velocity.dy,
+                  String(describing: appliedPhase),
+                  body.allContactedBodies().isEmpty ? 0 : 1)
+        }
+        #endif
 
         // Tilt IS gravity — but "up" belongs to breath alone (dy floored so
         // flipping the phone can't invert the world), and full tilt authority
