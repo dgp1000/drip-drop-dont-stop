@@ -127,6 +127,7 @@ final class GameModel: ObservableObject {
 
     func backToMenu() {
         logAbandonIfNeeded()
+        bankRunScore()
         finished = false
         screen = .menu
         GameCenter.shared.setAccessPoint(visible: true)
@@ -156,17 +157,24 @@ final class GameModel: ObservableObject {
                                  percent: Double(golds) / Double(bestScores.count) * 100)
     }
 
+    /// An honest run's score counts whenever the run ENDS — complete or
+    /// not. GC keeps each player's best, full runs dominate structurally
+    /// (more levels = more pot), and an empty leaderboard is worse than
+    /// an impure one. Runs not started at level 1 never submit.
+    func bankRunScore() {
+        guard runFromStart, totalScore > 0 else { return }
+        if totalScore > bestRun {
+            bestRun = totalScore
+            UserDefaults.standard.set(totalScore, forKey: "dripdrop.bestRun")
+        }
+        GameCenter.shared.submitBestRun(totalScore)
+    }
+
     func runFinished() {
         finished = true
-        if runFromStart {
-            if totalScore > bestRun {
-                bestRun = totalScore
-                UserDefaults.standard.set(totalScore, forKey: "dripdrop.bestRun")
-            }
-            // Honest runs go to the leaderboard (no-op if GC unavailable).
-            GameCenter.shared.submitBestRun(totalScore)
-            GameCenter.shared.report(.honestRun)
-        }
+        bankRunScore()
+        // The Dont Stop badge stays a finisher's honor.
+        if runFromStart { GameCenter.shared.report(.honestRun) }
     }
 
     func start() {

@@ -55,11 +55,11 @@ struct MenuView: View {
                 .foregroundStyle(.cyan)
 
                 if model.bestRun > 0 {
-                    Text("BEST RUN  ·  \(model.bestRun)")
+                    Text("BEST SCORE  ·  \(model.bestRun)")
                         .font(.system(.callout, design: .monospaced).weight(.bold))
                         .foregroundStyle(.orange)
                 } else {
-                    Text("Finish a full run from level 1 to set a best run score.")
+                    Text("Start from level 1 and bank all you can — that\u{2019}s your best score.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -97,7 +97,7 @@ struct MenuView: View {
                     .padding(.bottom, 24)
                 }
 
-                Text("Starting at level 1 counts toward your best run.")
+                Text("Starting at level 1 counts toward your best score.")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
 

@@ -40,6 +40,7 @@ struct DripDropApp: App {
                 // Engagement analytics: close the level visit and the
                 // session at the moment they walk away.
                 if model.screen == .playing { model.logAbandonIfNeeded() }
+                model.bankRunScore()
                 Analytics.sessionEnd(
                     levelIndex: model.screen == .playing ? model.levelNumber : nil)
             case .active:
