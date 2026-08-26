@@ -301,11 +301,13 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.00, y: 0.00, width: 1.00, height: 0.035), kind: .grate),
               ],
               movers: [
+                  // Eased 26 Aug (David: far too hard) — wider platform,
+                  // slower cycle: boarding on ice was the wall.
                   Mover(center: CGPoint(x: 0.58, y: 0.32),
-                        size: CGSize(width: 0.16, height: 0.03),
-                        travel: CGVector(dx: 0, dy: 0.34), period: 4.2),
+                        size: CGSize(width: 0.22, height: 0.03),
+                        travel: CGVector(dx: 0, dy: 0.34), period: 5.0),
               ],
-              par: 18,
+              par: 22,
               blowAllowed: false,
               // Freeze happens mid-fall, then up to a full 4.2 s lift
               // cycle waiting on the all-grate floor plus the ride — the
@@ -531,11 +533,14 @@ enum Levels {
                   // speed only builds as the velocity vector slowly rotates
                   // (~150pt/s average, not the naive 218) — the thread is
                   // impossible without this much runway.
-                  Zone(rect: CGRect(x: 0.22, y: 0.22, width: 0.78, height: 0.04), kind: .drain),  // band: gap left
-                  Zone(rect: CGRect(x: 0.00, y: 0.72, width: 0.62, height: 0.04), kind: .drain),  // band: gap right
-                  Zone(rect: CGRect(x: 0.92, y: 0.50, width: 0.08, height: 0.04), kind: .drain),  // wall-hug nub
+                  // Eased 26 Aug (David: far too hard): band 1 lower and
+                  // shorter (drift starts earlier, entry wider), band 2's
+                  // gap +0.10, and the wall-hug nub is gone — riding the
+                  // right wall is now a legit, less elegant route.
+                  Zone(rect: CGRect(x: 0.26, y: 0.18, width: 0.74, height: 0.04), kind: .drain),  // band: gap left
+                  Zone(rect: CGRect(x: 0.00, y: 0.74, width: 0.52, height: 0.04), kind: .drain),  // band: gap right
               ],
-              par: 16,
+              par: 18,
               steamAllowed: true,
               blowAllowed: false,
               mood: .mist),
