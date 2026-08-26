@@ -25,12 +25,24 @@ final class GameCenter {
     ///   dripdrop.honestrun  — "Dont Stop"    — finish a full run from level 1
     ///   dripdrop.allgold    — "Midas Drip"   — gold on every level (progress %)
     ///   dripdrop.nightfall  — "Nightfall"    — freeze by real darkness (hidden!)
+    ///   dripdrop.twentybasins — "Twenty Basins" — complete any 20 levels
+    ///   dripdrop.everybasin  — "Every Basin"   — complete all levels (progress %)
+    ///   dripdrop.depths      — "Into the Depths" — clear THE DEPTHS tier
+    ///   dripdrop.galeworks   — "Storm Chaser"  — clear THE GALEWORKS tier
+    ///   dripdrop.flashflood  — "Flash Flood"   — bank 900+ on one level
+    ///   dripdrop.stubborn    — "Stubborn"      — 100 lifetime deaths (progress %)
     enum Achievement: String {
         case firstBasin = "dripdrop.firstbasin"
         case underPar = "dripdrop.underpar"
         case honestRun = "dripdrop.honestrun"
         case allGold = "dripdrop.allgold"
         case nightfall = "dripdrop.nightfall"
+        case twentyBasins = "dripdrop.twentybasins"
+        case everyBasin = "dripdrop.everybasin"
+        case depths = "dripdrop.depths"
+        case galeworks = "dripdrop.galeworks"
+        case flashFlood = "dripdrop.flashflood"
+        case stubborn = "dripdrop.stubborn"
     }
     /// Highest percent already reported this session — GC dedups
     /// server-side, but there's no reason to spam it every bank.

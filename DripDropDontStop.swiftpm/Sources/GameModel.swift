@@ -152,9 +152,27 @@ final class GameModel: ObservableObject {
         // 525 = a par-or-better finish (the pot decays normalized by par —
         // same math as the menu's gold medal).
         if banked >= 525 { GameCenter.shared.report(.underPar) }
+        if banked >= 900 { GameCenter.shared.report(.flashFlood) }
         let golds = bestScores.filter { $0 >= 525 }.count
         GameCenter.shared.report(.allGold,
                                  percent: Double(golds) / Double(bestScores.count) * 100)
+
+        // Completion ladder: count-based and name-based, both immune to
+        // the planned difficulty reorder.
+        let done = bestScores.filter { $0 > 0 }.count
+        GameCenter.shared.report(.twentyBasins,
+                                 percent: Double(min(done, 20)) / 20 * 100)
+        GameCenter.shared.report(.everyBasin,
+                                 percent: Double(done) / Double(bestScores.count) * 100)
+        let completed = Set(zip(Levels.all, bestScores)
+            .filter { $0.1 > 0 }.map { $0.0.name })
+        let depths: Set = ["Undertow", "Splitshot", "Dumbwaiter", "Cold Boarding",
+                           "Kettle Drum", "Ration Book", "Millrace", "The Cistern"]
+        let gales: Set = ["Tailwind", "Thermal", "Coldfall", "Gale Rider",
+                          "Against the Grain", "Slipstream", "Organ Pipes",
+                          "The Galeworks"]
+        if depths.isSubset(of: completed) { GameCenter.shared.report(.depths) }
+        if gales.isSubset(of: completed) { GameCenter.shared.report(.galeworks) }
     }
 
     /// An honest run's score counts whenever the run ENDS — complete or
@@ -253,7 +271,15 @@ final class GameModel: ObservableObject {
         visitLogged = false
     }
 
-    func noteDeath() { visitDeaths += 1 }
+    func noteDeath() {
+        visitDeaths += 1
+        // Stubborn: a hundred lifetime deaths, worn proudly.
+        let d = UserDefaults.standard
+        let lifetime = d.integer(forKey: "dripdrop.lifetimeDeaths") + 1
+        d.set(lifetime, forKey: "dripdrop.lifetimeDeaths")
+        GameCenter.shared.report(.stubborn,
+                                 percent: Double(min(lifetime, 100)))
+    }
 
     /// The visit ended without a bank (menu button, or app closed).
     func logAbandonIfNeeded() {
