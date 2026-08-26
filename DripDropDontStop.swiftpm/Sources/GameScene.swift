@@ -885,14 +885,20 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.87, y: 0.79, width: 0.11, height: 0.045), kind: .goal),
                   Zone(rect: CGRect(x: 0.00, y: 0.00, width: 1.00, height: 0.035), kind: .grate),
                   Zone(rect: CGRect(x: 0.20, y: 0.68, width: 0.23, height: 0.04), kind: .drain),  // icicles over gap 1
-                  Zone(rect: CGRect(x: 0.57, y: 0.76, width: 0.23, height: 0.04), kind: .drain),  // icicles over gap 2
+                  Zone(rect: CGRect(x: 0.57, y: 0.76, width: 0.17, height: 0.04), kind: .drain),  // icicles over gap 2 (clear of pipe 3)
               ],
               winds: [
                   Wind(rect: CGRect(x: 0.06, y: 0.00, width: 0.14, height: 0.63),
                        force: CGVector(dx: 0, dy: 26)),
                   Wind(rect: CGRect(x: 0.43, y: 0.00, width: 0.14, height: 0.71),
                        force: CGVector(dx: 0, dy: 26)),
-                  Wind(rect: CGRect(x: 0.80, y: 0.00, width: 0.14, height: 0.79),
+                  // Pipe 3 sits BESIDE the goal ledge, not under it — v1
+                  // overlapped the ledge, so the crest arrived level with
+                  // the landing and the wind re-lifted anything that got
+                  // on (David: stuck right under the exit). Crest now
+                  // rides ~0.06 above the ledge; exit right, out of the
+                  // wind, and drop on.
+                  Wind(rect: CGRect(x: 0.75, y: 0.00, width: 0.09, height: 0.82),
                        force: CGVector(dx: 0, dy: 26)),
               ],
               par: 20,
