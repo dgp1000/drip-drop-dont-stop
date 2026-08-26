@@ -787,7 +787,7 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.00, y: 0.78, width: 0.40, height: 0.04), kind: .drain),  // icicles left of the top
               ],
               winds: [
-                  Wind(rect: CGRect(x: 0.42, y: 0.03, width: 0.16, height: 0.72),
+                  Wind(rect: CGRect(x: 0.42, y: 0.00, width: 0.16, height: 0.75),
                        force: CGVector(dx: 0, dy: 26)),
               ],
               par: 14,
@@ -796,7 +796,10 @@ enum Levels {
         // too weak to hold ice. Freeze to sink.
         Level(name: "Coldfall",
               hint: "The shaft blows upward — water floats into the icicles. FREEZE and sink through the gale into the basin.",
-              spawn: CGPoint(x: 0.50, y: 0.90),
+              // Spawn INSIDE the shaft, well below the icicle ceiling —
+              // v1 spawned at 0.90, inside the 0.88-0.92 kill band, and
+              // died instantly forever (caught by the -dbgpos trace).
+              spawn: CGPoint(x: 0.50, y: 0.75),
               walls: [],
               zones: [
                   Zone(rect: CGRect(x: 0.44, y: 0.015, width: 0.14, height: 0.05), kind: .goal),
@@ -864,7 +867,7 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.30, y: 0.60, width: 0.70, height: 0.04), kind: .drain),  // icicles: no flying it
               ],
               winds: [
-                  Wind(rect: CGRect(x: 0.06, y: 0.03, width: 0.40, height: 0.25),
+                  Wind(rect: CGRect(x: 0.06, y: 0.00, width: 0.40, height: 0.28),
                        force: CGVector(dx: 11, dy: 0)),
               ],
               par: 14,
@@ -885,11 +888,11 @@ enum Levels {
                   Zone(rect: CGRect(x: 0.57, y: 0.76, width: 0.23, height: 0.04), kind: .drain),  // icicles over gap 2
               ],
               winds: [
-                  Wind(rect: CGRect(x: 0.06, y: 0.03, width: 0.14, height: 0.60),
+                  Wind(rect: CGRect(x: 0.06, y: 0.00, width: 0.14, height: 0.63),
                        force: CGVector(dx: 0, dy: 26)),
-                  Wind(rect: CGRect(x: 0.43, y: 0.03, width: 0.14, height: 0.68),
+                  Wind(rect: CGRect(x: 0.43, y: 0.00, width: 0.14, height: 0.71),
                        force: CGVector(dx: 0, dy: 26)),
-                  Wind(rect: CGRect(x: 0.80, y: 0.03, width: 0.14, height: 0.76),
+                  Wind(rect: CGRect(x: 0.80, y: 0.00, width: 0.14, height: 0.79),
                        force: CGVector(dx: 0, dy: 26)),
               ],
               par: 20,
@@ -912,7 +915,7 @@ enum Levels {
               winds: [
                   Wind(rect: CGRect(x: 0.16, y: 0.30, width: 0.28, height: 0.60),
                        force: CGVector(dx: 0, dy: 26)),                  // the shaft
-                  Wind(rect: CGRect(x: 0.02, y: 0.03, width: 0.55, height: 0.20),
+                  Wind(rect: CGRect(x: 0.02, y: 0.00, width: 0.55, height: 0.23),
                        force: CGVector(dx: 10, dy: 0)),                  // the slipstream
                   Wind(rect: CGRect(x: 0.30, y: 0.60, width: 0.65, height: 0.16),
                        force: CGVector(dx: -11, dy: 0)),                 // the high gale, blowing home
@@ -1201,6 +1204,15 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
     /// level card sits on screen for as long as the player wants — name,
     /// hint, a big START. The world holds its breath until the tap.
     private func beginBriefing() {
+        #if targetEnvironment(simulator)
+        // The harness has no finger for START — and its timers can't win
+        // the didMove-reload race. Under -autostart the card simply
+        // doesn't exist.
+        if ProcessInfo.processInfo.arguments.contains("-autostart") {
+            quickStart()
+            return
+        }
+        #endif
         runState = .countdown
         model?.phaseLocked = true
         model?.countdown = nil
@@ -1578,7 +1590,12 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
             case .water: windFactor = 1.0
             }
             let pos = droplet.position
-            for w in windZones where w.rect.contains(pos) {
+            // Circle test, not center test: a grounded ball's center sits
+            // ~17pt up, below a wind volume that starts at the visual
+            // floor line — the column must catch the ball, not its
+            // midpoint (David: couldn't enter Thermal's column from the
+            // ground).
+            for w in windZones where circleIntersects(w.rect, center: pos, radius: 14) {
                 body.applyForce(CGVector(
                     dx: body.mass * w.force.dx * windFactor * pointsPerMeter,
                     dy: body.mass * w.force.dy * windFactor * pointsPerMeter))

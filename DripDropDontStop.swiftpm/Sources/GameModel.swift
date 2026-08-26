@@ -104,10 +104,6 @@ final class GameModel: ObservableObject {
                                : args.contains("-steam") ? .steam : nil
             DispatchQueue.main.async { [weak self] in
                 self?.startGame(at: idx)
-                // The harness has no finger for the briefing's START.
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    self?.beginLevel()
-                }
                 if let forced {
                     // After the start (phases are locked until then).
                     DispatchQueue.main.asyncAfter(deadline: .now() + 4.2) {

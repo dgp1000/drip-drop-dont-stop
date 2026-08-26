@@ -350,6 +350,9 @@ One per-install UUID, no identity. Events: `session_start`,
 completed, banked, deaths, duration; death restarts count into one
 "visit", the briefing card doesn't). Analysis views:
 `dripdrop_level_difficulty`, `dripdrop_funnel`, `dripdrop_engagement`.
+Views drive from the `dripdrop_levels` catalog (joined by NAME, so the
+planned reorder is safe) — **when adding levels, refresh that table**
+(the migration `dripdrop_level_catalog` shows the pattern).
 
 ⚠️ Before the next App Store submission: update ASC App Privacy
 ("Product Interaction — not linked to identity") and fix the review

@@ -164,13 +164,13 @@ async function refresh() {
     barChart("c-completion", diff, {
       value: r => +r.completion_pct || 0, color: "var(--blue)", max: 100, fmt: v => Math.round(v) + "%",
       tipHTML: r => `<div class="t">${r.level_index}. ${r.level_name}</div>
-        <div class="d">${r.completion_pct}% completed · ${r.visits} visits<br>
-        avg clear ${fmtDur(r.avg_clear_seconds)} · avg bank ${r.avg_banked ?? "—"}</div>`,
+        <div class="d">${r.completion_pct ?? 0}% completed · ${r.visits} visits<br>
+        avg clear ${r.avg_clear_seconds ? fmtDur(r.avg_clear_seconds) : "—"} · avg bank ${r.avg_banked ?? "—"}</div>`,
     });
     barChart("c-deaths", diff, {
       value: r => +r.avg_deaths || 0, color: "var(--orange)", fmt: v => (+v).toFixed(1),
       tipHTML: r => `<div class="t">${r.level_index}. ${r.level_name}</div>
-        <div class="d">${r.avg_deaths} deaths per visit · ${r.visits} visits</div>`,
+        <div class="d">${r.avg_deaths ?? 0} deaths per visit · ${r.visits} visits</div>`,
     });
     barChart("c-funnel", d.funnel || [], {
       value: r => r.players_completed || 0, color: "var(--blue)", fmt: v => Math.round(v),
