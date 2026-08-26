@@ -906,20 +906,28 @@ enum Levels {
         // The capstone: sink a shaft, ride a slipstream, sail a gale.
         Level(name: "The Galeworks",
               hint: "Everything the gales taught: FREEZE to sink the shaft, ride the slipstream over the pit, then STEAM into the high wind and sail LEFT to the shelf.",
-              spawn: CGPoint(x: 0.30, y: 0.92),
+              // Spawn INSIDE the shaft with time to freeze — v1 spawned
+              // at 0.92, inside the shaft-cap icicles and above the
+              // ceiling band: born dead (David). The cap band is gone
+              // outright; the full-width ceiling below it already does
+              // its job.
+              spawn: CGPoint(x: 0.22, y: 0.42),
               walls: [
                   CGRect(x: 0.06, y: 0.70, width: 0.20, height: 0.03),   // goal shelf
               ],
               zones: [
                   Zone(rect: CGRect(x: 0.10, y: 0.73, width: 0.13, height: 0.05), kind: .goal),
-                  Zone(rect: CGRect(x: 0.16, y: 0.92, width: 0.28, height: 0.04), kind: .drain),  // icicles cap the shaft
                   Zone(rect: CGRect(x: 0.00, y: 0.00, width: 0.70, height: 0.035), kind: .grate),
                   Zone(rect: CGRect(x: 0.70, y: 0.00, width: 0.10, height: 0.035), kind: .drain),  // the pit
                   Zone(rect: CGRect(x: 0.30, y: 0.45, width: 0.45, height: 0.04), kind: .drain),  // icicles: rise on the right only
                   Zone(rect: CGRect(x: 0.00, y: 0.86, width: 1.00, height: 0.04), kind: .drain),  // ceiling icicles
               ],
               winds: [
-                  Wind(rect: CGRect(x: 0.16, y: 0.30, width: 0.28, height: 0.60),
+                  // The shaft tops out BELOW the gale band — with the two
+                  // overlapping, floating water got ferried left onto the
+                  // goal shelf for a 2-second free win (caught by trace).
+                  // Water now hovers harmlessly mid-shaft until frozen.
+                  Wind(rect: CGRect(x: 0.16, y: 0.30, width: 0.28, height: 0.24),
                        force: CGVector(dx: 0, dy: 26)),                  // the shaft
                   Wind(rect: CGRect(x: 0.02, y: 0.00, width: 0.55, height: 0.23),
                        force: CGVector(dx: 10, dy: 0)),                  // the slipstream
