@@ -79,6 +79,9 @@ struct Mover {
     /// Fraction of a period to hold at the start position before cycling —
     /// lets two lifts run anti-phase (0.5) for transfer puzzles.
     var phase: Double = 0
+    /// A raised lip on the platform's left edge: ice rolled on from the
+    /// right stops against it instead of skating off the far side.
+    var lipLeft = false
 }
 
 /// A wind volume: a constant push on everything inside it (v1.3, THE
@@ -305,7 +308,8 @@ enum Levels {
                   // slower cycle: boarding on ice was the wall.
                   Mover(center: CGPoint(x: 0.58, y: 0.32),
                         size: CGSize(width: 0.22, height: 0.03),
-                        travel: CGVector(dx: 0, dy: 0.34), period: 5.0),
+                        travel: CGVector(dx: 0, dy: 0.34), period: 5.0,
+                        lipLeft: true),   // catches the ball rolling on
               ],
               par: 22,
               blowAllowed: false,
@@ -1266,6 +1270,22 @@ final class GameScene: SKScene, SKPhysicsContactDelegate {
         body.categoryBitMask = Cat.wall
         body.friction = 0.3
         node.physicsBody = body
+        if m.lipLeft {
+            // Rides the platform; tall enough to catch the ball, low
+            // enough to hop over deliberately.
+            let lipSize = CGSize(width: 6, height: sz.height + 14)
+            let lip = SKShapeNode(rectOf: lipSize, cornerRadius: 2)
+            lip.fillColor = UIColor(red: 0.42, green: 0.30, blue: 0.20, alpha: 1)
+            lip.strokeColor = .clear
+            lip.position = CGPoint(x: -sz.width / 2 + lipSize.width / 2,
+                                   y: (lipSize.height - sz.height) / 2)
+            let lipBody = SKPhysicsBody(rectangleOf: lipSize)
+            lipBody.isDynamic = false
+            lipBody.categoryBitMask = Cat.wall
+            lipBody.friction = 0.3
+            lip.physicsBody = lipBody
+            node.addChild(lip)
+        }
         let half = m.period / 2
         let go = SKAction.moveBy(x: travel.dx * 2, y: travel.dy * 2, duration: half)
         go.timingMode = .easeInEaseOut
