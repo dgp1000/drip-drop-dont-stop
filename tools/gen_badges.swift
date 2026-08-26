@@ -175,3 +175,99 @@ c.move(to: CGPoint(x: 155, y: 235)); c.addLine(to: CGPoint(x: 262, y: 140)); c.s
 c.move(to: CGPoint(x: 212, y: 188)); c.addLine(to: CGPoint(x: 250, y: 226)); c.strokePath()
 c.restoreGState()
 save(c, "nightfall", dir: dir)
+
+// ---- 1.3 batch ------------------------------------------------------
+
+// Twenty Basins: a green basin catching a steady drip.
+c = ctx()
+background(c, tint: rgba(0.1, 0.8, 0.5))
+c.setFillColor(rgba(0.15, 0.75, 0.5))
+c.fill(CGRect(x: 166, y: 120, width: 180, height: 110))
+c.setFillColor(rgba(0.08, 0.45, 0.3))
+c.fill(CGRect(x: 166, y: 200, width: 180, height: 30))
+c.setStrokeColor(rgba(0.85, 1.0, 0.95, 0.9)); c.setLineWidth(8)
+c.stroke(CGRect(x: 158, y: 112, width: 196, height: 126))
+for (i, y) in [(0, 300.0), (1, 360.0), (2, 420.0)] {
+    fillDroplet(c, cx: 256 + CGFloat(i % 2 == 0 ? -14 : 14), cy: y, r: 22,
+                top: rgba(0.55, 0.9, 1.0), bottom: rgba(0.05, 0.45, 0.85),
+                glow: rgba(0.2, 0.8, 1.0, 0.7))
+}
+save(c, "twenty-basins", dir: dir)
+
+// Every Basin: the golden basin, collection complete.
+c = ctx()
+background(c, tint: rgba(1.0, 0.8, 0.2))
+c.setFillColor(rgba(1.0, 0.8, 0.25))
+c.fill(CGRect(x: 146, y: 140, width: 220, height: 130))
+c.setFillColor(rgba(0.7, 0.5, 0.1))
+c.fill(CGRect(x: 146, y: 240, width: 220, height: 30))
+c.setStrokeColor(rgba(1.0, 0.95, 0.7, 1)); c.setLineWidth(10)
+c.stroke(CGRect(x: 136, y: 130, width: 240, height: 150))
+fillDroplet(c, cx: 256, cy: 330, r: 55,
+            top: rgba(1.0, 0.92, 0.55), bottom: rgba(0.85, 0.6, 0.1),
+            glow: rgba(1.0, 0.85, 0.3, 1.0))
+save(c, "every-basin", dir: dir)
+
+// Into the Depths: a droplet descending past depth chevrons.
+c = ctx()
+background(c, tint: rgba(0.15, 0.35, 0.85))
+c.setStrokeColor(rgba(0.5, 0.75, 1.0, 0.75)); c.setLineWidth(14)
+c.setLineCap(.round)
+for (i, y) in [(0, 400.0), (1, 330.0), (2, 260.0)] {
+    let inset = CGFloat(i) * 26
+    c.move(to: CGPoint(x: 150 + inset, y: y + 34))
+    c.addLine(to: CGPoint(x: 256, y: y))
+    c.addLine(to: CGPoint(x: 362 - inset, y: y + 34))
+    c.strokePath()
+}
+fillDroplet(c, cx: 256, cy: 130, r: 58,
+            top: rgba(0.55, 0.9, 1.0), bottom: rgba(0.05, 0.35, 0.75),
+            glow: rgba(0.2, 0.6, 1.0, 0.9))
+save(c, "into-the-depths", dir: dir)
+
+// Storm Chaser: the droplet leaning into layered gale streaks.
+c = ctx()
+background(c, tint: rgba(0.2, 0.75, 0.75))
+c.setStrokeColor(rgba(0.7, 1.0, 0.95, 0.85)); c.setLineCap(.round)
+for (i, y) in [(0, 380.0), (1, 320.0), (2, 260.0), (3, 200.0)] {
+    c.setLineWidth(i % 2 == 0 ? 12 : 8)
+    c.move(to: CGPoint(x: 90, y: y))
+    c.addLine(to: CGPoint(x: 90 + CGFloat(140 - i * 18), y: y))
+    c.strokePath()
+}
+c.saveGState()
+c.translateBy(x: 290, y: 280); c.rotate(by: -0.45); c.translateBy(x: -290, y: -280)
+fillDroplet(c, cx: 290, cy: 270, r: 78,
+            top: rgba(0.75, 1.0, 0.95), bottom: rgba(0.1, 0.55, 0.6),
+            glow: rgba(0.4, 0.95, 0.9, 0.9))
+c.restoreGState()
+save(c, "storm-chaser", dir: dir)
+
+// Flash Flood: the droplet mid-burst, speed spikes radiating.
+c = ctx()
+background(c, tint: rgba(1.0, 0.6, 0.1))
+c.setStrokeColor(rgba(1.0, 0.85, 0.4, 0.95)); c.setLineCap(.round)
+for a in stride(from: 0.0, to: 2 * Double.pi, by: Double.pi / 4) {
+    c.setLineWidth(9)
+    let r1: CGFloat = 150, r2: CGFloat = 205
+    c.move(to: CGPoint(x: 256 + cos(a) * r1, y: 256 + sin(a) * r1))
+    c.addLine(to: CGPoint(x: 256 + cos(a) * r2, y: 256 + sin(a) * r2))
+    c.strokePath()
+}
+fillDroplet(c, cx: 256, cy: 215, r: 80,
+            top: rgba(1.0, 0.95, 0.7), bottom: rgba(0.95, 0.55, 0.1),
+            glow: rgba(1.0, 0.75, 0.2, 1.0))
+save(c, "flash-flood", dir: dir)
+
+// Stubborn: the droplet re-forming inside impact rings.
+c = ctx()
+background(c, tint: rgba(0.85, 0.4, 0.55))
+c.setStrokeColor(rgba(1.0, 0.75, 0.85, 0.6))
+for (r, w) in [(200.0, 6.0), (160.0, 8.0), (120.0, 10.0)] {
+    c.setLineWidth(w)
+    c.strokeEllipse(in: CGRect(x: 256 - r, y: 256 - r, width: r * 2, height: r * 2))
+}
+fillDroplet(c, cx: 256, cy: 215, r: 62,
+            top: rgba(1.0, 0.8, 0.9), bottom: rgba(0.7, 0.25, 0.45),
+            glow: rgba(1.0, 0.55, 0.7, 0.9))
+save(c, "stubborn", dir: dir)
