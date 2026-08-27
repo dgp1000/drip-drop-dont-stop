@@ -34,6 +34,19 @@ enum Analytics {
         (Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? "?"
     }
 
+    /// Hardware identifier ("iPhone17,2"). Population-level device data —
+    /// shared by millions of units, so the "no fingerprinting, not linked
+    /// to identity" stance in the header still holds.
+    private static let model: String = {
+        var sys = utsname()
+        uname(&sys)
+        return withUnsafeBytes(of: &sys.machine) { raw in
+            String(decoding: raw.prefix(while: { $0 != 0 }), as: UTF8.self)
+        }
+    }()
+
+    private static let osVersion = ProcessInfo.processInfo.operatingSystemVersionString
+
     // MARK: The three events
 
     static func sessionStart() {
@@ -69,6 +82,7 @@ enum Analytics {
         // Every row carries the FULL column set (nulls padded): PostgREST
         // bulk inserts reject batches whose rows have differing keys.
         var row: [String: Any] = ["device_id": deviceID, "build": build,
+                                  "model": model, "os": osVersion,
                                   "event": event,
                                   "level_index": NSNull(), "level_name": NSNull(),
                                   "completed": NSNull(), "banked": NSNull(),
@@ -85,7 +99,14 @@ enum Analytics {
         guard let data = UserDefaults.standard.data(forKey: queueKey),
               let arr = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]
         else { return [] }
-        return arr
+        // Rows queued by a build without model/os would give the batch
+        // mixed key sets — PostgREST rejects those wholesale.
+        return arr.map { row in
+            var r = row
+            if r["model"] == nil { r["model"] = NSNull() }
+            if r["os"] == nil { r["os"] = NSNull() }
+            return r
+        }
     }
 
     private static func save(_ queue: [[String: Any]]) {

@@ -15,7 +15,9 @@ import UIKit
 
 final class GameCenter {
     static let shared = GameCenter()
-    static let leaderboardID = "dripdrop.bestrun"
+    /// v1.3+: fresh board so launch day starts clean — TestFlight-era
+    /// scores live on the old "dripdrop.bestrun" and stay there.
+    static let leaderboardID = "dripdrop.bestscore"
     private(set) var available = false
 
     /// Achievements. Every ID must exist in ASC (App → Services → Game

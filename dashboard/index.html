@@ -73,6 +73,12 @@
 </div>
 
 <div class="card">
+  <h2>Device mix</h2>
+  <div class="sub">players per hardware model · new in build 17+, older events show as unknown</div>
+  <div id="devices"></div>
+</div>
+
+<div class="card">
   <h2>Recent events</h2>
   <div class="sub">latest 25, newest first</div>
   <div id="recent"></div>
@@ -92,6 +98,25 @@ const fmtDur = s => { s = Math.round(s || 0);
   return (s / 3600).toFixed(1) + "h"; };
 
 function tile(v, l) { return `<div class="tile"><div class="v">${v}</div><div class="l">${l}</div></div>`; }
+
+// utsname machine id → marketing name. Unmapped ids display raw — still
+// tells the story ("iPhone18,2"), just less prettily.
+const DEVICE_NAMES = {
+  "iPhone12,1": "iPhone 11", "iPhone12,3": "iPhone 11 Pro", "iPhone12,5": "iPhone 11 Pro Max",
+  "iPhone12,8": "iPhone SE (2nd gen)",
+  "iPhone13,1": "iPhone 12 mini", "iPhone13,2": "iPhone 12",
+  "iPhone13,3": "iPhone 12 Pro", "iPhone13,4": "iPhone 12 Pro Max",
+  "iPhone14,2": "iPhone 13 Pro", "iPhone14,3": "iPhone 13 Pro Max",
+  "iPhone14,4": "iPhone 13 mini", "iPhone14,5": "iPhone 13",
+  "iPhone14,6": "iPhone SE (3rd gen)", "iPhone14,7": "iPhone 14", "iPhone14,8": "iPhone 14 Plus",
+  "iPhone15,2": "iPhone 14 Pro", "iPhone15,3": "iPhone 14 Pro Max",
+  "iPhone15,4": "iPhone 15", "iPhone15,5": "iPhone 15 Plus",
+  "iPhone16,1": "iPhone 15 Pro", "iPhone16,2": "iPhone 15 Pro Max",
+  "iPhone17,1": "iPhone 16 Pro", "iPhone17,2": "iPhone 16 Pro Max",
+  "iPhone17,3": "iPhone 16", "iPhone17,4": "iPhone 16 Plus", "iPhone17,5": "iPhone 16e",
+  "arm64": "Simulator", "x86_64": "Simulator",
+};
+const deviceName = m => !m || m === "unknown" ? "unknown (pre-17 build)" : (DEVICE_NAMES[m] || m);
 
 const tip = document.getElementById("tip");
 function showTip(e, html) {
@@ -178,13 +203,23 @@ async function refresh() {
         <div class="d">${r.players_completed} players completed<br>${r.players_stopped_here} stopped here</div>`,
     });
 
+    const devs = d.devices || [];
+    document.getElementById("devices").innerHTML = devs.length
+      ? `<table><tr><th>Device</th><th>Players</th><th>Sessions</th><th>Last seen</th></tr>` +
+        devs.map(r => `<tr>
+          <td>${deviceName(r.model)}</td>
+          <td>${r.players}</td><td>${r.sessions}</td>
+          <td>${new Date(r.last_seen).toLocaleDateString()}</td></tr>`).join("") + `</table>`
+      : '<div class="empty">No data yet.</div>';
+
     const rec = d.recent || [];
     document.getElementById("recent").innerHTML = rec.length
       ? `<table><tr><th>When</th><th>Event</th><th>Level</th><th>Result</th><th>Deaths</th><th>Banked</th></tr>` +
         rec.map(r => `<tr>
           <td>${new Date(r.at).toLocaleTimeString()}</td>
           <td>${r.event.replace("_", " ")}</td>
-          <td>${r.level_name ?? "—"}</td>
+          <td>${r.level_name ? (r.level_index != null ? r.level_index + " · " : "") + r.level_name
+                : r.level_index != null ? r.level_index : "—"}</td>
           <td class="${r.completed == null ? "" : r.completed ? "ok" : "no"}">${r.completed == null ? "—" : r.completed ? "completed" : "abandoned"}</td>
           <td>${r.deaths ?? "—"}</td><td>${r.banked ?? "—"}</td></tr>`).join("") + `</table>`
       : '<div class="empty">No events yet.</div>';
