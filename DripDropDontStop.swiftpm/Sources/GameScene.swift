@@ -668,7 +668,7 @@ enum Levels {
         // wide enough to catch a falling condense. v1 asked for a 0.6
         // drift in a tenth of Threadneedle's runway.
         Level(name: "Kettle Drum",
-              hint: "Three fronts, three breaths: STEAM up each gap, drift, and CONDENSE to fall onto the next perch while it recharges. The gaps never line up.",
+              hint: "STEAM up through each gap, then CONDENSE to drop onto the perch. A nudge of drift is plenty.",
               spawn: CGPoint(x: 0.10, y: 0.08),
               walls: [
                   // Eased again 26 Aug (David: condense couldn't reach the
@@ -676,15 +676,23 @@ enum Levels {
                   // condense-FALL lands them — each still extends under
                   // the next gap for the straight-up burst.
                   CGRect(x: 0.36, y: 0.44, width: 0.36, height: 0.03),   // perch 1
+                  // Lip on perch 1's right end (28 Aug, tester reports):
+                  // the condense-fall used to skid straight off the edge.
+                  CGRect(x: 0.70, y: 0.47, width: 0.02, height: 0.03),
                   CGRect(x: 0.16, y: 0.68, width: 0.34, height: 0.03),   // perch 2
+                  // Lip on perch 2's left end — the drift-left landing
+                  // mirrors perch 1's skid problem on the other side.
+                  CGRect(x: 0.16, y: 0.71, width: 0.02, height: 0.03),
                   CGRect(x: 0.02, y: 0.90, width: 0.28, height: 0.03),   // goal ledge
               ],
               zones: [
                   Zone(rect: CGRect(x: 0.08, y: 0.93, width: 0.12, height: 0.045), kind: .goal),
-                  // Fronts spread apart for more drift runway per burst.
-                  Zone(rect: CGRect(x: 0.28, y: 0.26, width: 0.72, height: 0.04), kind: .drain),  // front 1: gap left
-                  Zone(rect: CGRect(x: 0.00, y: 0.58, width: 0.55, height: 0.04), kind: .drain),  // front 2: gap right
-                  Zone(rect: CGRect(x: 0.34, y: 0.80, width: 0.66, height: 0.04), kind: .drain),  // front 3: gap left
+                  // Fronts shortened 28 Aug (too hard in the field): each
+                  // gap now sits almost directly over its landing, so a
+                  // burst needs only a nudge of drift, not a glide.
+                  Zone(rect: CGRect(x: 0.44, y: 0.26, width: 0.56, height: 0.04), kind: .drain),  // front 1: gap left
+                  Zone(rect: CGRect(x: 0.00, y: 0.58, width: 0.48, height: 0.04), kind: .drain),  // front 2: gap right
+                  Zone(rect: CGRect(x: 0.42, y: 0.80, width: 0.58, height: 0.04), kind: .drain),  // front 3: gap left
               ],
               par: 26,
               steamAllowed: true,

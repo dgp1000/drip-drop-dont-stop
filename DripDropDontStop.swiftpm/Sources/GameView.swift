@@ -156,6 +156,9 @@ struct GameView: View {
     /// The scrim pill keeps a marginal overlap readable regardless.
     private var infoBlock: some View {
         VStack(alignment: .leading, spacing: 6) {
+            // The pill dims with the hint after GO (not fully out — the
+            // level number stays findable) so the block never hides a
+            // platform once play begins.
             Text("LEVEL \(model.levelNumber) · \(model.levelName.uppercased())")
                 .font(.caption.weight(.bold))
                 .tracking(2)
@@ -163,6 +166,7 @@ struct GameView: View {
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
                 .background(.black.opacity(0.5), in: Capsule())
+                .opacity(0.35 + 0.65 * hintOpacity)
             Text(model.hint)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(Color(red: 1.0, green: 0.85, blue: 0.4))
@@ -180,11 +184,16 @@ struct GameView: View {
     /// geometry in it wins. Level coords are bottom-up; screen top-down.
     private var titleSlot: CGFloat {
         let level = Levels.all[max(0, min(model.levelNumber - 1, Levels.all.count - 1))]
-        let slots: [CGFloat] = [0.0, 0.15, 0.30]
+        // Region matches the block's real footprint (pill + a multi-line
+        // hint reaches ~0.17 of the screen, nearly full width) — the old
+        // 0.14×0.64 guess let the hint's tail sit on platforms (Kettle
+        // Drum's perch 2 vanished behind it). More slots so crowded-top
+        // levels can drop the block into genuinely empty air.
+        let slots: [CGFloat] = [0.0, 0.15, 0.30, 0.45, 0.60]
         var best: CGFloat = 0
         var bestArea = CGFloat.greatestFiniteMagnitude
         for s in slots {
-            let region = CGRect(x: 0, y: 1 - (s + 0.14), width: 0.64, height: 0.14)
+            let region = CGRect(x: 0, y: 1 - (s + 0.17), width: 0.85, height: 0.17)
             let area = occupiedArea(of: level, in: region)
             if area < bestArea - 0.0001 {
                 bestArea = area
@@ -195,20 +204,25 @@ struct GameView: View {
     }
 
     private func occupiedArea(of level: Level, in region: CGRect) -> CGFloat {
-        var rects = level.walls + level.zones.map(\.rect)
+        // Structures the player must see and land on (walls, goal,
+        // movers, the spawn prop) count 3×; drain bands count 1× — on a
+        // dense level the block settles over a hazard row rather than
+        // hiding a perch.
+        var weighted: [(CGRect, CGFloat)] = level.walls.map { ($0, 3) }
+        weighted += level.zones.map { ($0.rect, $0.kind == .drain ? 1 : 3) }
         for m in level.movers {
             // The full sweep of the platform, both directions of travel.
-            rects.append(CGRect(x: m.center.x - m.size.width / 2,
-                                y: m.center.y - m.size.height / 2 - abs(m.travel.dy),
-                                width: m.size.width,
-                                height: m.size.height + 2 * abs(m.travel.dy)))
+            weighted.append((CGRect(x: m.center.x - m.size.width / 2,
+                                    y: m.center.y - m.size.height / 2 - abs(m.travel.dy),
+                                    width: m.size.width,
+                                    height: m.size.height + 2 * abs(m.travel.dy)), 3))
         }
         // The source prop hangs above the spawn.
-        rects.append(CGRect(x: level.spawn.x - 0.06, y: level.spawn.y,
-                            width: 0.12, height: 0.15))
-        return rects.reduce(0) { total, r in
-            let i = r.intersection(region)
-            return total + (i.isNull ? 0 : i.width * i.height)
+        weighted.append((CGRect(x: level.spawn.x - 0.06, y: level.spawn.y,
+                                width: 0.12, height: 0.15), 3))
+        return weighted.reduce(0) { total, item in
+            let i = item.0.intersection(region)
+            return total + (i.isNull ? 0 : i.width * i.height * item.1)
         }
     }
 
