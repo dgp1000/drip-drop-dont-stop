@@ -668,7 +668,7 @@ enum Levels {
         // wide enough to catch a falling condense. v1 asked for a 0.6
         // drift in a tenth of Threadneedle's runway.
         Level(name: "Kettle Drum",
-              hint: "STEAM up through each gap, then CONDENSE to drop onto the perch. A nudge of drift is plenty.",
+              hint: "STEAM up through the gaps and CONDENSE onto the perches. The middle sky is clear — overshooting is safe.",
               spawn: CGPoint(x: 0.10, y: 0.08),
               walls: [
                   // Eased again 26 Aug (David: condense couldn't reach the
@@ -687,12 +687,15 @@ enum Levels {
               ],
               zones: [
                   Zone(rect: CGRect(x: 0.08, y: 0.93, width: 0.12, height: 0.045), kind: .goal),
-                  // Fronts shortened 28 Aug (too hard in the field): each
-                  // gap now sits almost directly over its landing, so a
-                  // burst needs only a nudge of drift, not a glide.
-                  Zone(rect: CGRect(x: 0.44, y: 0.26, width: 0.56, height: 0.04), kind: .drain),  // front 1: gap left
-                  Zone(rect: CGRect(x: 0.00, y: 0.58, width: 0.48, height: 0.04), kind: .drain),  // front 2: gap right
-                  Zone(rect: CGRect(x: 0.42, y: 0.80, width: 0.58, height: 0.04), kind: .drain),  // front 3: gap left
+                  // 4th easing (28 Aug): the middle front is GONE. The
+                  // real difficulty was never the drift — it was the
+                  // fronts overhead making every late condense lethal.
+                  // Now only the first climb and the final approach have
+                  // ice above; the middle sky is open, so overshooting a
+                  // perch just means drifting back down. Two timings
+                  // instead of three, both with generous headroom.
+                  Zone(rect: CGRect(x: 0.44, y: 0.26, width: 0.56, height: 0.04), kind: .drain),  // low front: gap left
+                  Zone(rect: CGRect(x: 0.42, y: 0.80, width: 0.58, height: 0.04), kind: .drain),  // high front: gap left
               ],
               par: 26,
               steamAllowed: true,
